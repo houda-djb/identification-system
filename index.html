@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ID MANAGEMENT SYSTEM</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/app-config.js"></script> 
+ <script src="js/branding.js"></script>
+<style>html { visibility: hidden; }</style>
+<script src="js/auth-guard.js"></script></head>
+<body>
+<div class="scanlines"></div>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-hex">⬡</div>
+      <div>
+        <div class="logo-title">UniGuard</div>
+        <div class="logo-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">MAIN MODULES</div>
+      <a href="index.html" class="nav-item active"><span class="ni">⊞</span>Dashboard<span class="na">›</span></a>
+      <a href="create.html" class="nav-item"><span class="ni">⊕</span>New Identity Registration<span class="na">›</span></a>
+      <a href="search.html" class="nav-item"><span class="ni">⊙</span>Multi-criteria Search<span class="na">›</span></a>
+      <div class="nav-group-label">SECURITY</div>
+      <a href="admin-auth.html" class="nav-item"><span class="ni">🔐</span>Auth Management<span class="na">›</span></a>
+      <div class="nav-group-label">REFERENCE</div>
+      <a href="#" class="nav-item"><span class="ni">◈</span>Use Cases<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">◉</span>Acceptance Criteria<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">⊛</span>Database Schema<span class="na">›</span></a>
+    </nav>
+    <div class="sys-status"><span class="blink-dot"></span>SYSTEM ONLINE</div>
+  </aside>
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left"><span class="module-tag">MODULE:</span> IDENTITY &amp; ACCESS MANAGEMENT</div>
+      <div class="topbar-search">
+        <input id="topSearch" type="text" placeholder="Multi-criteria search (name, date, department...)" onkeydown="if(event.key==='Enter')goSearch()"/>
+        <button onclick="goSearch()">⌕</button>
+      </div>
+      <div class="topbar-clock" id="clock">00:00:00</div>
+    </header>
+    <div class="dash-grid">
+      <div class="panel p-population">
+        <div class="ph"><span class="pt">POPULATION OVERVIEW</span><span class="ptag live">● LIVE</span></div>
+        <div class="pop-body">
+          <div class="donut-wrap">
+            <canvas id="donutChart" width="150" height="150"></canvas>
+            <div class="donut-center">
+              <div class="donut-n" id="totalCount">—</div>
+              <div class="donut-l">TOTAL RECORDS</div>
+            </div>
+          </div>
+          <ul class="pop-legend">
+            <li><span class="ld" style="--c:#00d4ff"></span><span id="ls1">Students (—)</span></li>
+            <li><span class="ld" style="--c:#7fff00"></span><span id="ls2">Faculty (—)</span></li>
+            <li><span class="ld" style="--c:#ff9f00"></span><span id="ls3">Admin. Staff (—)</span></li>
+            <li><span class="ld" style="--c:#bf5fff"></span><span id="ls4">PhD Candidates (—)</span></li>
+            <li><span class="ld" style="--c:#ff3c3c"></span><span id="ls5">Temporary (—)</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel p-lifecycle">
+        <div class="ph"><span class="pt">IDENTITY LIFE CYCLE — STATUSES</span></div>
+        <div style="padding:0 1rem 1rem"><canvas id="barChart" height="130"></canvas></div>
+      </div>
+      <div class="panel p-recent">
+        <div class="ph"><span class="pt">RECENT IDENTIFIER GENERATION</span></div>
+        <table class="mtable">
+          <thead><tr><th>ID</th><th>TYPE</th><th>NAME</th><th>CREATED AT</th></tr></thead>
+          <tbody id="recentIds"><tr><td colspan="4" class="lc">LOADING...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="panel p-profile">
+        <div class="ph"><span class="pt">USER PROFILE VIEW</span></div>
+        <div id="quickProfile" class="qp-placeholder">
+          <div class="qp-icon">⊡</div>
+          <div>SELECT A RECORD TO VIEW PROFILE</div>
+        </div>
+      </div>
+      <div class="panel p-case">
+        <div class="ph"><span class="pt">NEW STUDENT ENROLLMENT STATUS (CASE 1)</span></div>
+        <div class="case-inner">
+          <div class="case-label">Registered students this year</div>
+          <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+          <div class="case-nums">
+            <span class="cn" id="caseNum">—</span>
+            <span class="cl">STUDENTS ENROLLED</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel p-flow">
+        <div class="ph"><span class="pt">IDENTITY IDENTIFICATION FLOW</span></div>
+        <div class="flow-note">ID never changes, multiple accounts possible</div>
+        <div class="flow-row">
+          <div class="fs">USER TYPE<br>SELECTION</div><div class="fa">→</div>
+          <div class="fs">FILLS<br>FORM</div><div class="fa">→</div>
+          <div class="fs">SYSTEM<br>GENERATES ID</div><div class="fa">→</div>
+          <div class="fs">SAVES TO<br>DATABASE</div><div class="fa">→</div>
+          <div class="fs">CONFIRMATION<br>SHOWN</div>
+        </div>
+        <div class="flow-rules">
+          <span>▸ First/Last names ≥ 2 chars</span>
+          <span>▸ Email valid &amp; unique</span>
+          <span>▸ Min age 16 for students</span>
+          <span>▸ Phone numeric only</span>
+          <span>▸ No empty required fields</span>
+          <span>▸ DOB cannot be in future</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/supabase-config.js"></script>
+<script src="js/dashboard.js"></script>
+<script>
+  setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB')},1000);
+  function goSearch(){const q=document.getElementById('topSearch').value.trim();window.location.href=q?`search.html?q=${encodeURIComponent(q)}`:'search.html';}
+</script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MY PROFILE — U N I V </title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/app-config.js"></script> 
+ <script src="js/branding.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#060a0f; --bg2:#0a1018; --bg3:#0e1520; --panel:#0b1422;
+      --panelbrd:#1a2d45; --accent:#00d4ff; --accent2:#7fff00;
+      --accent3:#ff9f00; --red:#ff3c3c; --text:#c8dff0; --muted:#4a6a85;
+      --bright:#e8f4ff; --mono:'Share Tech Mono',monospace;
+      --head:'Orbitron',sans-serif; --body:'Rajdhani',sans-serif;
+      --grid-line:rgba(0,212,255,0.06);
+    }
+    html,body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--body); font-size:13px; overflow-x:hidden; }
+    .scanlines { position:fixed; inset:0; z-index:9999; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,0.08) 0px,rgba(0,0,0,0.08) 1px,transparent 1px,transparent 3px); }
+    .grid-bg { position:fixed; inset:0; z-index:0; background:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px); background-size:40px 40px; background-color:var(--bg); }
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:10; height:46px; background:var(--bg2); border-bottom:1px solid var(--panelbrd); display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+    .topbar::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.4; }
+    .tb-left { display:flex; align-items:center; gap:12px; }
+    .logo-hex { font-size:22px; color:var(--accent); text-shadow:0 0 12px var(--accent); animation:hexPulse 3s infinite; }
+    @keyframes hexPulse { 0%,100%{text-shadow:0 0 8px var(--accent)} 50%{text-shadow:0 0 20px var(--accent),0 0 40px rgba(0,212,255,0.3)} }
+    .tb-title { font-family:var(--head); font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.1em; }
+    .tb-sub { font-family:var(--mono); font-size:9px; color:var(--muted); }
+    .tb-right { display:flex; align-items:center; gap:16px; }
+    .tb-clock { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .logout-btn { background:transparent; border:1px solid var(--red); color:var(--red); font-family:var(--mono); font-size:9px; padding:5px 12px; border-radius:2px; cursor:pointer; letter-spacing:0.1em; transition:all 0.15s; }
+    .logout-btn:hover { background:rgba(255,60,60,0.1); }
+    .page-wrap { position:relative; z-index:5; padding:70px 24px 40px; max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+
+    /* Profile card */
+    .profile-card { background:var(--panel); border:1px solid var(--panelbrd); border-radius:2px; padding:24px; display:flex; align-items:center; gap:20px; position:relative; overflow:hidden; }
+    .profile-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+    .avatar { width:70px; height:70px; background:rgba(0,212,255,0.1); border:1px solid var(--accent); border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:var(--head); font-size:26px; font-weight:900; color:var(--accent); text-shadow:0 0 16px rgba(0,212,255,0.5); flex-shrink:0; }
+    .profile-info { flex:1; }
+    .profile-name { font-family:var(--head); font-size:20px; font-weight:900; color:var(--bright); letter-spacing:0.06em; }
+    .profile-id { font-family:var(--mono); font-size:11px; color:var(--accent); margin:4px 0; }
+    .profile-badges { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+    .badge { padding:3px 10px; border-radius:2px; font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:0.1em; }
+    .badge-type { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.3); color:var(--accent); }
+    .badge-status-pending  { background:rgba(255,159,0,0.1); border:1px solid rgba(255,159,0,0.3); color:var(--accent3); }
+    .badge-status-active   { background:rgba(127,255,0,0.1); border:1px solid rgba(127,255,0,0.3); color:var(--accent2); }
+    .badge-status-suspended{ background:rgba(255,60,60,0.1); border:1px solid rgba(255,60,60,0.3); color:var(--red); }
+    .badge-status-inactive { background:rgba(74,106,133,0.1); border:1px solid rgba(74,106,133,0.3); color:var(--muted); }
+    .auth-level-box { text-align:right; }
+    .al-label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.1em; margin-bottom:6px; }
+    .al-badge { padding:6px 14px; border-radius:2px; font-family:var(--head); font-size:11px; font-weight:700; letter-spacing:0.1em; }
+    .al-1 { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.3); color:var(--accent); }
+    .al-2 { background:rgba(127,255,0,0.1); border:1px solid rgba(127,255,0,0.3); color:var(--accent2); }
+
+    /* Info panels */
+    .panels-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .info-panel { background:var(--panel); border:1px solid var(--panelbrd); border-radius:2px; overflow:hidden; position:relative; }
+    .info-panel::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,var(--accent) 0%,transparent 60%); opacity:0.4; }
+    .info-panel.full { grid-column:1/-1; }
+    .ip-header { padding:10px 16px; border-bottom:1px solid var(--panelbrd); background:rgba(0,0,0,0.2); font-family:var(--head); font-size:9px; color:var(--accent); letter-spacing:0.12em; }
+    .ip-body { padding:14px 16px; }
+    .irow { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(26,45,69,0.4); font-size:12px; gap:12px; }
+    .irow:last-child { border-bottom:none; }
+    .ik { color:var(--muted); font-family:var(--mono); font-size:10px; letter-spacing:0.05em; flex-shrink:0; }
+    .iv { color:var(--text); font-weight:600; text-align:right; }
+
+    /* Security panel */
+    .sec-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .sec-item { background:rgba(0,0,0,0.2); border:1px solid var(--panelbrd); border-radius:2px; padding:12px; text-align:center; }
+    .sec-val { font-family:var(--head); font-size:16px; color:var(--accent); margin-bottom:4px; }
+    .sec-lbl { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.08em; }
+
+    /* Change password button */
+    .change-pwd-btn { width:100%; padding:11px; background:transparent; border:1px solid var(--accent3); color:var(--accent3); font-family:var(--head); font-size:10px; font-weight:700; letter-spacing:0.2em; cursor:pointer; border-radius:2px; transition:all 0.2s; margin-top:10px; }
+    .change-pwd-btn:hover { background:rgba(255,159,0,0.08); box-shadow:0 0 16px rgba(255,159,0,0.2); }
+
+    /* Loading / error */
+    .loading-msg { color:var(--muted); font-family:var(--mono); font-size:11px; text-align:center; padding:40px; letter-spacing:0.1em; }
+    .status-bar { position:fixed; bottom:0; left:0; right:0; z-index:10; height:28px; background:var(--bg2); border-top:1px solid var(--panelbrd); display:flex; align-items:center; padding:0 24px; gap:24px; }
+    .sb-item { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.08em; display:flex; align-items:center; gap:6px; }
+    .sb-dot { width:5px; height:5px; border-radius:50%; }
+    .sb-green { background:var(--accent2); box-shadow:0 0 6px var(--accent2); }
+
+    @media(max-width:700px) { .panels-grid { grid-template-columns:1fr; } .sec-grid { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="grid-bg"></div>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="tb-left">
+    <div class="logo-hex">⬡</div>
+    <div>
+      <div class="tb-title">UniGuard</div>
+      <div class="tb-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-clock" id="clock">00:00:00</div>
+    <button class="logout-btn" onclick="doLogout()">⊗ LOGOUT</button>
+  </div>
+</header>
+
+<!-- Content -->
+<div class="page-wrap">
+  <div id="loadMsg" class="loading-msg">LOADING PROFILE...</div>
+  <div id="mainContent" style="display:none; flex-direction:column; gap:16px;">
+
+    <!-- Profile card -->
+    <div class="profile-card">
+      <div class="avatar" id="pAvatar">??</div>
+      <div class="profile-info">
+        <div class="profile-name" id="pName">—</div>
+        <div class="profile-id" id="pId">—</div>
+        <div class="profile-badges">
+          <span class="badge badge-type" id="pType">—</span>
+          <span class="badge" id="pStatus">—</span>
+        </div>
+      </div>
+      <div class="auth-level-box">
+        <div class="al-label">AUTH LEVEL</div>
+        <div class="al-badge" id="pAuthLevel">—</div>
+      </div>
+    </div>
+
+    <!-- Info panels -->
+    <div class="panels-grid">
+      <div class="info-panel">
+        <div class="ip-header">PERSONAL INFORMATION</div>
+        <div class="ip-body" id="personalInfo">
+          <div class="loading-msg">LOADING...</div>
+        </div>
+      </div>
+      <div class="info-panel">
+        <div class="ip-header" id="specificTitle">ACADEMIC INFORMATION</div>
+        <div class="ip-body" id="specificInfo">
+          <div class="loading-msg">LOADING...</div>
+        </div>
+      </div>
+      <div class="info-panel full">
+        <div class="ip-header">SECURITY & SESSION</div>
+        <div class="ip-body">
+          <div class="sec-grid">
+            <div class="sec-item">
+              <div class="sec-val" id="secLevel">—</div>
+              <div class="sec-lbl">AUTH LEVEL</div>
+            </div>
+            <div class="sec-item">
+              <div class="sec-val" id="secLastLogin">—</div>
+              <div class="sec-lbl">LAST LOGIN</div>
+            </div>
+            <div class="sec-item">
+              <div class="sec-val" id="secSession">ACTIVE</div>
+              <div class="sec-lbl">SESSION STATUS</div>
+            </div>
+          </div>
+          <button class="change-pwd-btn" onclick="goChangePassword()">
+            🔑 CHANGE PASSWORD
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <div class="sb-item"><span class="sb-dot sb-green"></span>SESSION ACTIVE</div>
+  <div class="sb-item" id="sbIdentity">IDENTITY: —</div>
+  <div class="sb-item" style="margin-left:auto">UNIV BATNA 2 — IAM SYSTEM</div>
+</div>
+
+<script>
+  // ─── Clock ───────────────────────────────────────────────
+  setInterval(() => {
+    document.getElementById('clock').textContent =
+      new Date().toTimeString().slice(0,8) + ' // ' + new Date().toLocaleDateString('en-GB');
+  }, 1000);
+
+  // ─── Check session ────────────────────────────────────────
+  const token      = sessionStorage.getItem('session_token');
+  const identityId = sessionStorage.getItem('session_identity_id');
+  const authLevel  = parseInt(sessionStorage.getItem('session_auth_level') || '1');
+
+  if (!token || !identityId) {
+    window.location.replace('auth/login.html');
+  }
+
+  // ─── Load profile ─────────────────────────────────────────
+  async function loadProfile() {
+    try {
+      // 1. Get person data
+      const { data: person, error } = await window.supabase
+        .from('persons')
+        .select('*')
+        .eq('id', identityId)
+        .single();
+
+      if (error || !person) {
+        document.getElementById('loadMsg').textContent = 'PROFILE NOT FOUND.';
+        return;
+      }
+
+      // 2. Fill profile card
+      const initials = (person.first_name[0] + person.last_name[0]).toUpperCase();
+      document.getElementById('pAvatar').textContent  = initials;
+      document.getElementById('pName').textContent    = person.first_name + ' ' + person.last_name;
+      document.getElementById('pId').textContent      = person.id;
+      document.getElementById('sbIdentity').textContent = 'IDENTITY: ' + person.id;
+
+      const typeLabels = { STU:'STUDENT', PHD:'PHD CANDIDATE', FAC:'FACULTY', STF:'STAFF', TMP:'TEMPORARY' };
+      document.getElementById('pType').textContent = typeLabels[person.type] || person.type;
+
+      const statusEl = document.getElementById('pStatus');
+      statusEl.textContent = person.status?.toUpperCase() || '—';
+      statusEl.className = 'badge badge-status-' + (person.status?.toLowerCase() || 'pending');
+
+      const levelLabels = { 1:'L1 — BASIC', 2:'L2 — STANDARD', 3:'L3 — HIGH', 4:'L4 — CRITICAL' };
+      const levelEl = document.getElementById('pAuthLevel');
+      levelEl.textContent = levelLabels[authLevel] || 'L1';
+      levelEl.className = 'al-badge al-' + Math.min(authLevel, 2);
+
+      // 3. Personal info
+      document.getElementById('personalInfo').innerHTML = `
+        <div class="irow"><span class="ik">FULL NAME</span><span class="iv">${person.first_name} ${person.last_name}</span></div>
+        <div class="irow"><span class="ik">DATE OF BIRTH</span><span class="iv">${person.date_of_birth || '—'}</span></div>
+        <div class="irow"><span class="ik">PLACE OF BIRTH</span><span class="iv">${person.place_of_birth || '—'}</span></div>
+        <div class="irow"><span class="ik">NATIONALITY</span><span class="iv">${person.nationality || '—'}</span></div>
+        <div class="irow"><span class="ik">GENDER</span><span class="iv">${person.gender || '—'}</span></div>
+        <div class="irow"><span class="ik">EMAIL</span><span class="iv">${person.personal_email || '—'}</span></div>
+        <div class="irow"><span class="ik">PHONE</span><span class="iv">${person.phone || '—'}</span></div>
+      `;
+
+      // 4. Type-specific info
+      await loadSpecificInfo(person.type, person.id);
+
+      // 5. Security info
+      document.getElementById('secLevel').textContent = 'L' + authLevel;
+      const { data: cred } = await window.supabase
+        .from('auth_credentials')
+        .select('last_login')
+        .eq('identity_id', identityId)
+        .single();
+
+      document.getElementById('secLastLogin').textContent = cred?.last_login
+        ? new Date(cred.last_login).toLocaleDateString('en-GB')
+        : 'FIRST LOGIN';
+
+      // 6. Show content
+      document.getElementById('loadMsg').style.display = 'none';
+      const mc = document.getElementById('mainContent');
+      mc.style.display = 'flex';
+
+    } catch(e) {
+      document.getElementById('loadMsg').textContent = 'ERROR: ' + e.message;
+    }
+  }
+
+  async function loadSpecificInfo(type, id) {
+    const titleEl = document.getElementById('specificTitle');
+    const bodyEl  = document.getElementById('specificInfo');
+
+    if (type === 'STU' || type === 'PHD') {
+      titleEl.textContent = type === 'PHD' ? 'PHD INFORMATION' : 'ACADEMIC INFORMATION';
+      const { data } = await window.supabase.from('students').select('*').eq('id', id).single();
+      if (data) {
+        bodyEl.innerHTML = `
+          <div class="irow"><span class="ik">MAJOR</span><span class="iv">${data.major || '—'}</span></div>
+          <div class="irow"><span class="ik">FACULTY</span><span class="iv">${data.faculty || '—'}</span></div>
+          <div class="irow"><span class="ik">DEPARTMENT</span><span class="iv">${data.department || '—'}</span></div>
+          <div class="irow"><span class="ik">GROUP</span><span class="iv">${data.group_name || '—'}</span></div>
+          <div class="irow"><span class="ik">ENTRY YEAR</span><span class="iv">${data.entry_year || '—'}</span></div>
+          <div class="irow"><span class="ik">SCHOLARSHIP</span><span class="iv">${data.scholarship ? 'YES' : 'NO'}</span></div>
+        `;
+      }
+    } else if (type === 'FAC') {
+      titleEl.textContent = 'PROFESSIONAL INFORMATION';
+      const { data } = await window.supabase.from('faculty').select('*').eq('id', id).single();
+      if (data) {
+        bodyEl.innerHTML = `
+          <div class="irow"><span class="ik">RANK</span><span class="iv">${data.rank || '—'}</span></div>
+          <div class="irow"><span class="ik">DEPARTMENT</span><span class="iv">${data.primary_department || '—'}</span></div>
+          <div class="irow"><span class="ik">OFFICE</span><span class="iv">${data.office || '—'}</span></div>
+          <div class="irow"><span class="ik">RESEARCH</span><span class="iv">${data.research_areas || '—'}</span></div>
+          <div class="irow"><span class="ik">CONTRACT</span><span class="iv">${data.contract_type || '—'}</span></div>
+        `;
+      }
+    } else if (type === 'STF' || type === 'TMP') {
+      titleEl.textContent = 'STAFF INFORMATION';
+      const { data } = await window.supabase.from('staff').select('*').eq('id', id).single();
+      if (data) {
+        bodyEl.innerHTML = `
+          <div class="irow"><span class="ik">DEPARTMENT</span><span class="iv">${data.department || '—'}</span></div>
+          <div class="irow"><span class="ik">JOB TITLE</span><span class="iv">${data.job_title || '—'}</span></div>
+          <div class="irow"><span class="ik">GRADE</span><span class="iv">${data.grade || '—'}</span></div>
+          <div class="irow"><span class="ik">ENTRY DATE</span><span class="iv">${data.entry_date || '—'}</span></div>
+        `;
+      }
+    } else {
+      titleEl.textContent = 'ADDITIONAL INFORMATION';
+      bodyEl.innerHTML = '<div class="loading-msg">NO ADDITIONAL DATA</div>';
+    }
+  }
+
+  // ─── Logout ───────────────────────────────────────────────
+  async function doLogout() {
+    await window.supabase
+      .from('auth_sessions')
+      .delete()
+      .eq('session_token', token);
+    sessionStorage.clear();
+    window.location.replace('auth/login.html');
+  }
+
+  // ─── Change password ──────────────────────────────────────
+  function goChangePassword() {
+    sessionStorage.setItem('auth_identity_id', identityId);
+    sessionStorage.setItem('auth_force_change', '1');
+    window.location.href = 'auth/change-password.html';
+  }
+
+  // ─── Start ────────────────────────────────────────────────
+  loadProfile();
+</script>
+</body>
+</html>

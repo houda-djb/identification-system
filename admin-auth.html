@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UniGuard — AUTH ADMIN</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/app-config.js"></script>
+  <script src="js/branding.js"></script>
+  <style>html { visibility: hidden; }</style>
+  <script src="js/auth-guard.js"></script>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-hex">UG</div>
+      <div>
+        <div class="logo-title">UniGuard</div>
+        <div class="logo-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">MAIN MODULES</div>
+      <a href="index.html" class="nav-item"><span class="ni">⊞</span>Dashboard<span class="na">›</span></a>
+      <a href="create.html" class="nav-item"><span class="ni">⊕</span>New Identity Registration<span class="na">›</span></a>
+      <a href="search.html" class="nav-item"><span class="ni">⊙</span>Multi-criteria Search<span class="na">›</span></a>
+      <div class="nav-group-label">SECURITY</div>
+      <a href="admin-auth.html" class="nav-item active"><span class="ni">🔐</span>Auth Management<span class="na">›</span></a>
+      <a href="audit-log.html" class="nav-item"><span class="ni">📋</span>Audit Log<span class="na">›</span></a>
+    </nav>
+    <div class="sys-status"><span class="blink-dot"></span>SYSTEM ONLINE</div>
+  </aside>
+  <main class="main-content" style="padding:0;overflow-y:auto;">
+    <header class="topbar">
+      <div class="topbar-left"><span class="module-tag">MODULE:</span> AUTHENTICATION MANAGEMENT</div>
+      <div class="topbar-clock" id="clock">00:00:00</div>
+    </header>
+
+    <div style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div class="panel" style="padding:16px;text-align:center;">
+          <div style="font-family:var(--head);font-size:24px;color:var(--accent)" id="statTotal">—</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.1em">TOTAL USERS</div>
+        </div>
+        <div class="panel" style="padding:16px;text-align:center;">
+          <div style="font-family:var(--head);font-size:24px;color:var(--accent2)" id="statActive">—</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.1em">ACTIVE</div>
+        </div>
+        <div class="panel" style="padding:16px;text-align:center;">
+          <div style="font-family:var(--head);font-size:24px;color:var(--red)" id="statLocked">—</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.1em">LOCKED</div>
+        </div>
+        <div class="panel" style="padding:16px;text-align:center;">
+          <div style="font-family:var(--head);font-size:24px;color:var(--accent3)" id="statFirst">—</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.1em">FIRST LOGIN PENDING</div>
+        </div>
+      </div>
+
+      <!-- Users table -->
+      <div class="panel" style="overflow:hidden;">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--panelbrd);background:rgba(0,0,0,0.2);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-family:var(--head);font-size:9px;color:var(--accent);letter-spacing:0.12em">USER AUTHENTICATION STATUS</span>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="searchUsers" placeholder="Search by ID or username..." oninput="filterUsers()" style="background:var(--bg3);border:1px solid var(--panelbrd);border-radius:2px;color:var(--text);padding:5px 10px;font-family:var(--mono);font-size:10px;outline:none;width:220px;"/>
+            <button onclick="loadUsers()" style="background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:9px;padding:5px 12px;border-radius:2px;cursor:pointer;letter-spacing:0.1em;">↻ REFRESH</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;" id="usersTable">
+            <thead>
+              <tr style="background:var(--bg2);">
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">IDENTITY ID</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">USERNAME</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">AUTH LEVEL</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">STATUS</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">FAILED ATTEMPTS</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">LAST LOGIN</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-align:left;border-bottom:1px solid var(--panelbrd);">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="7" style="text-align:center;padding:30px;font-family:var(--mono);font-size:10px;color:var(--muted);">LOADING...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent login attempts -->
+      <div class="panel" style="overflow:hidden;">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--panelbrd);background:rgba(0,0,0,0.2);">
+          <span style="font-family:var(--head);font-size:9px;color:var(--accent);letter-spacing:0.12em">RECENT LOGIN ATTEMPTS (LAST 20)</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:var(--bg2);">
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;border-bottom:1px solid var(--panelbrd);">TIME</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;border-bottom:1px solid var(--panelbrd);">IDENTITY ID</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;border-bottom:1px solid var(--panelbrd);">RESULT</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;border-bottom:1px solid var(--panelbrd);">MFA USED</th>
+                <th style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;border-bottom:1px solid var(--panelbrd);">REASON</th>
+              </tr>
+            </thead>
+            <tbody id="logsBody">
+              <tr><td colspan="5" style="text-align:center;padding:20px;font-family:var(--mono);font-size:10px;color:var(--muted);">LOADING...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Notification toast -->
+<div id="toast" style="display:none;position:fixed;bottom:40px;right:24px;z-index:100;background:var(--panel);border:1px solid var(--accent2);border-left:3px solid var(--accent2);padding:12px 20px;font-family:var(--mono);font-size:10px;color:var(--accent2);border-radius:2px;animation:fadeIn 0.3s ease;"></div>
+
+<script>
+  setInterval(()=>{ document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB'); },1000);
+
+  let allUsers = [];
+
+  // ─── Load users ───────────────────────────────────
+  async function loadUsers() {
+    const { data: users, error } = await window.supabase
+      .from('auth_credentials')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !users) return;
+
+    allUsers = users;
+
+    // Update stats
+    document.getElementById('statTotal').textContent  = users.length;
+    document.getElementById('statActive').textContent  = users.filter(u => !u.is_locked && !u.is_first_login).length;
+    document.getElementById('statLocked').textContent  = users.filter(u => u.is_locked).length;
+    document.getElementById('statFirst').textContent   = users.filter(u => u.is_first_login).length;
+
+    renderUsers(users);
+  }
+
+  function renderUsers(users) {
+    const levelLabels = { 1:'L1 BASIC', 2:'L2 STANDARD', 3:'L3 HIGH', 4:'L4 CRITICAL' };
+    const levelColors = { 1:'var(--accent)', 2:'var(--accent2)', 3:'var(--accent3)', 4:'var(--red)' };
+
+    document.getElementById('usersBody').innerHTML = users.map(u => {
+      const isLocked    = u.is_locked && u.locked_until && new Date(u.locked_until) > new Date();
+      const statusColor = isLocked ? 'var(--red)' : u.is_first_login ? 'var(--accent3)' : 'var(--accent2)';
+      const statusText  = isLocked ? '🔒 LOCKED' : u.is_first_login ? '⏳ FIRST LOGIN' : '✓ ACTIVE';
+      const lastLogin   = u.last_login ? new Date(u.last_login).toLocaleString('en-GB') : 'NEVER';
+
+      return `<tr style="border-bottom:1px solid rgba(26,45,69,0.4);">
+        <td style="padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--accent);">${u.identity_id}</td>
+        <td style="padding:8px 12px;font-size:11px;color:var(--text);">${u.username}</td>
+        <td style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:${levelColors[u.auth_level]||'var(--muted)'};">${levelLabels[u.auth_level]||'—'}</td>
+        <td style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:${statusColor};">${statusText}</td>
+        <td style="padding:8px 12px;font-family:var(--mono);font-size:10px;color:${u.failed_attempts>0?'var(--accent3)':'var(--muted)'};">${u.failed_attempts || 0} / 5</td>
+        <td style="padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);">${lastLogin}</td>
+        <td style="padding:8px 12px;">
+          <div style="display:flex;gap:6px;">
+            ${isLocked ? `<button onclick="unlockUser('${u.id}','${u.username}')" style="background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:2px;cursor:pointer;">🔓 UNLOCK</button>` : ''}
+            <button onclick="resetAttempts('${u.id}','${u.username}')" style="background:transparent;border:1px solid var(--muted);color:var(--muted);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:2px;cursor:pointer;">↺ RESET</button>
+            <button onclick="changeLevel('${u.id}','${u.username}',${u.auth_level})" style="background:transparent;border:1px solid var(--accent3);color:var(--accent3);font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:2px;cursor:pointer;">⚙ LEVEL</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ─── Filter users ─────────────────────────────────
+  function filterUsers() {
+    const q = document.getElementById('searchUsers').value.toLowerCase();
+    const filtered = allUsers.filter(u =>
+      u.identity_id.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q)
+    );
+    renderUsers(filtered);
+  }
+
+  // ─── Unlock account ───────────────────────────────
+  async function unlockUser(id, username) {
+    if (!confirm(`Unlock account for ${username}?`)) return;
+    await window.supabase.from('auth_credentials').update({
+      is_locked: false, locked_until: null, failed_attempts: 0
+    }).eq('id', id);
+    showToast(`✓ ${username} UNLOCKED`);
+    loadUsers();
+  }
+
+  // ─── Reset failed attempts ────────────────────────
+  async function resetAttempts(id, username) {
+    await window.supabase.from('auth_credentials').update({
+      failed_attempts: 0, is_locked: false, locked_until: null
+    }).eq('id', id);
+    showToast(`✓ ATTEMPTS RESET FOR ${username}`);
+    loadUsers();
+  }
+
+  // ─── Change auth level ────────────────────────────
+  async function changeLevel(id, username, currentLevel) {
+    const newLevel = prompt(`Change auth level for ${username}\nCurrent: L${currentLevel}\nEnter new level (1=Basic, 2=Standard, 3=High, 4=Critical):`);
+    if (!newLevel || ![1,2,3,4].includes(parseInt(newLevel))) { alert('Invalid level'); return; }
+    await window.supabase.from('auth_credentials').update({ auth_level: parseInt(newLevel) }).eq('id', id);
+    showToast(`✓ ${username} SET TO L${newLevel}`);
+    loadUsers();
+  }
+
+  // ─── Load login history ───────────────────────────
+  async function loadLogs() {
+    const { data: logs } = await window.supabase
+      .from('auth_login_history')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!logs) return;
+
+    document.getElementById('logsBody').innerHTML = logs.map(l => `
+      <tr style="border-bottom:1px solid rgba(26,45,69,0.4);">
+        <td style="padding:7px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);">${new Date(l.created_at).toLocaleString('en-GB')}</td>
+        <td style="padding:7px 12px;font-family:var(--mono);font-size:10px;color:var(--accent);">${l.identity_id}</td>
+        <td style="padding:7px 12px;font-family:var(--mono);font-size:9px;color:${l.success?'var(--accent2)':'var(--red)'};">${l.success ? '✓ SUCCESS' : '✗ FAILED'}</td>
+        <td style="padding:7px 12px;font-family:var(--mono);font-size:9px;color:${l.mfa_used?'var(--accent2)':'var(--muted)'};">${l.mfa_used ? 'YES' : 'NO'}</td>
+        <td style="padding:7px 12px;font-size:11px;color:var(--muted);">${l.failure_reason || '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ─── Toast notification ───────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(()=>{ t.style.display='none'; }, 3000);
+  }
+
+  // ─── Init ─────────────────────────────────────────
+  loadUsers();
+  loadLogs();
+  setInterval(loadLogs, 30000); // refresh logs every 30s
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title> U N I V </title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script> 
+  <script src="js/app-config.js"></script> 
+ <script src="js/branding.js"></script>
+  <style>html { visibility: hidden; }</style>
+<script src="js/auth-guard.js"></script>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="create-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-hex">⬡</div>
+      <div>
+        <div class="logo-title">UG</div>
+        <div class="logo-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">MAIN MODULES</div>
+      <a href="index.html" class="nav-item"><span class="ni">⊞</span>Dashboard<span class="na">›</span></a>
+      <a href="create.html" class="nav-item active"><span class="ni">⊕</span>New Identity Registration<span class="na">›</span></a>
+      <a href="search.html" class="nav-item"><span class="ni">⊙</span>Multi-criteria Search<span class="na">›</span></a>
+      <div class="nav-group-label">SECURITY</div>
+      <a href="admin-auth.html" class="nav-item"><span class="ni">🔐</span>Auth Management<span class="na">›</span></a>
+      <div class="nav-group-label">REFERENCE</div>
+      <a href="#" class="nav-item"><span class="ni">◈</span>Use Cases<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">◉</span>Acceptance Criteria<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">⊛</span>Database Schema<span class="na">›</span></a>
+    </nav>
+    <div class="sys-status"><span class="blink-dot"></span>SYSTEM ONLINE</div>
+  </aside>
+  <main class="create-main">
+    <header class="topbar">
+      <div class="topbar-left"><span class="module-tag">MODULE:</span> NEW IDENTITY REGISTRATION</div>
+      <div class="topbar-clock" id="clock">00:00:00</div>
+    </header>
+    <div class="create-inner">
+      <div class="form-panel">
+        <div class="fp-header"><div class="fp-num">01</div><div class="fp-title">SELECT IDENTITY TYPE</div></div>
+        <div class="fp-body">
+          <div class="type-grid">
+            <label class="type-btn" id="btn-STU"><input type="radio" name="ptype" value="STU" onchange="onTypeChange('STU')"/><span class="ticon">🎓</span>STUDENT</label>
+            <label class="type-btn" id="btn-PHD"><input type="radio" name="ptype" value="PHD" onchange="onTypeChange('PHD')"/><span class="ticon">🔬</span>PHD CANDIDATE</label>
+            <label class="type-btn" id="btn-FAC"><input type="radio" name="ptype" value="FAC" onchange="onTypeChange('FAC')"/><span class="ticon">👨‍🏫</span>FACULTY</label>
+            <label class="type-btn" id="btn-STF"><input type="radio" name="ptype" value="STF" onchange="onTypeChange('STF')"/><span class="ticon">🏢</span>STAFF</label>
+            <label class="type-btn" id="btn-TMP"><input type="radio" name="ptype" value="TMP" onchange="onTypeChange('TMP')"/><span class="ticon">⏳</span>TEMPORARY</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-panel" id="commonPanel" style="display:none">
+        <div class="fp-header"><div class="fp-num">02</div><div class="fp-title">PERSONAL INFORMATION</div></div>
+        <div class="fp-body">
+          <div class="fgrid">
+            <div class="fg"><label>FIRST NAME *</label><input type="text" id="firstName" /></div>
+            <div class="fg"><label>LAST NAME *</label><input type="text" id="lastName" /></div>
+            <div class="fg"><label>DATE OF BIRTH *</label><input type="date" id="dateOfBirth"/></div>
+            <div class="fg"><label>PLACE OF BIRTH</label><input type="text" id="placeOfBirth" ></div>
+            <div class="fg"><label>NATIONALITY</label><input type="text" id="nationality" ></div>
+            <div class="fg"><label>GENDER</label><select id="gender"><option value="">Select...</option><option>Male</option><option>Female</option></select></div>
+            <div class="fg"><label>PERSONAL EMAIL *</label><input type="email" id="personalEmail" ></div>
+            <div class="fg"><label>PHONE NUMBER</label><input type="text" id="phone" ></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-panel" id="studentPanel" style="display:none">
+        <div class="fp-header"><div class="fp-num">03</div><div class="fp-title">ACADEMIC INFORMATION</div></div>
+        <div class="fp-body">
+          <div class="fgrid">
+            <div class="fg"><label>NATIONAL ID</label><input type="text" id="nationalId"/></div>
+            <div class="fg"><label>DIPLOMA TYPE</label><input type="text" id="diplomaType" placeholder="Baccalauréat"/></div>
+            <div class="fg"><label>DIPLOMA YEAR</label><input type="number" id="diplomaYear" placeholder="2024"/></div>
+            <div class="fg"><label>DIPLOMA HONORS</label><select id="diplomaHonors"><option value="">None</option><option>Passable</option><option>Assez Bien</option><option>Bien</option><option>Très Bien</option></select></div>
+            <div class="fg"><label>MAJOR / PROGRAM</label><input type="text" id="major" placeholder="Computer Science"/></div>
+            <div class="fg"><label>ENTRY YEAR</label><input type="number" id="entryYear" placeholder="2025"/></div>
+            <div class="fg"><label>FACULTY</label><input type="text" id="studentFaculty" placeholder="Sciences & Technology"/></div>
+            <div class="fg"><label>DEPARTMENT</label><input type="text" id="studentDepartment" placeholder="Computer Science"/></div>
+            <div class="fg"><label>GROUP</label><input type="text" id="groupName" placeholder="Group 3"/></div>
+            <div class="fg"><label>SCHOLARSHIP</label><select id="scholarship"><option value="false">No</option><option value="true">Yes</option></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-panel" id="facultyPanel" style="display:none">
+        <div class="fp-header"><div class="fp-num">03</div><div class="fp-title">PROFESSIONAL INFORMATION</div></div>
+        <div class="fp-body">
+          <div class="fgrid">
+            <div class="fg"><label>RANK</label><select id="rank"><option value="">Select...</option><option>Professor</option><option>Associate Professor</option><option>Assistant Professor</option><option>Lecturer</option></select></div>
+            <div class="fg"><label>EMPLOYMENT CATEGORY</label><select id="employmentCategory"><option value="">Select...</option><option value="Tenured">Tenured</option><option value="Adjunct">Adjunct / Part-time</option><option value="Visiting">Visiting Researcher</option></select></div>
+            <div class="fg"><label>APPOINTMENT DATE</label><input type="date" id="appointmentDate"/></div>
+            <div class="fg"><label>PRIMARY DEPARTMENT</label><input type="text" id="primaryDepartment" placeholder="Computer Science"/></div>
+            <div class="fg"><label>OFFICE</label><input type="text" id="office" placeholder="Block B, Room 204"/></div>
+            <div class="fg"><label>PHD INSTITUTION</label><input type="text" id="phdInstitution"/></div>
+            <div class="fg"><label>RESEARCH AREAS</label><input type="text" id="researchAreas" placeholder="AI, Networks"/></div>
+            <div class="fg"><label>HABILITATION (HDR)</label><select id="habilitation"><option value="false">No</option><option value="true">Yes</option></select></div>
+            <div class="fg"><label>CONTRACT TYPE</label><input type="text" id="contractType" placeholder="Permanent"/></div>
+            <div class="fg"><label>CONTRACT START</label><input type="date" id="contractStart"/></div>
+            <div class="fg"><label>CONTRACT END</label><input type="date" id="contractEnd"/></div>
+            <div class="fg"><label>TEACHING HOURS</label><input type="number" id="teachingHours" placeholder="180"/></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-panel" id="staffPanel" style="display:none">
+        <div class="fp-header"><div class="fp-num">03</div><div class="fp-title">STAFF INFORMATION</div></div>
+        <div class="fp-body">
+          <div class="fgrid">
+            <div class="fg"><label>DEPARTMENT / SERVICE</label><input type="text" id="staffDepartment" placeholder="Registrar's Office"/></div>
+            <div class="fg"><label>JOB TITLE</label><input type="text" id="jobTitle" placeholder="Administrative Officer"/></div>
+            <div class="fg"><label>GRADE</label><input type="text" id="grade" placeholder="Grade 10"/></div>
+            <div class="fg"><label>DATE OF ENTRY</label><input type="date" id="entryDate"/></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-panel" id="submitPanel" style="display:none">
+        <div class="fp-header"><div class="fp-num">04</div><div class="fp-title">CONFIRM & GENERATE IDENTITY</div></div>
+        <div class="fp-body">
+          <div class="id-preview-box" id="idPreviewBox" style="display:none">GENERATED ID: <strong id="previewId">—</strong></div>
+          <div class="alert-err" id="errBox" style="display:none"></div>
+          <div class="alert-ok" id="okBox" style="display:none"></div>
+          <button class="submit-btn" id="submitBtn" onclick="submitForm()">⊕ CREATE IDENTITY</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/id-generator.js"></script>
+<script src="js/create.js"></script>
+<script>
+  setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB')},1000);
+</script>
+</body>
+</html>

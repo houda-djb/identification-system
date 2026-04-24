@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UniGuard — SECURITY QUESTIONS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#060a0f; --bg2:#0a1018; --bg3:#0e1520; --panel:#0b1422;
+      --panelbrd:#1a2d45; --accent:#00d4ff; --accent2:#7fff00;
+      --accent3:#ff9f00; --red:#ff3c3c; --text:#c8dff0; --muted:#4a6a85;
+      --bright:#e8f4ff; --mono:'Share Tech Mono',monospace;
+      --head:'Orbitron',sans-serif; --body:'Rajdhani',sans-serif;
+      --grid-line:rgba(0,212,255,0.06);
+    }
+    html,body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--body); font-size:13px; overflow-y:auto; }
+    .scanlines { position:fixed; inset:0; z-index:9999; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,0.08) 0px,rgba(0,0,0,0.08) 1px,transparent 1px,transparent 3px); }
+    .grid-bg { position:fixed; inset:0; z-index:0; background:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px); background-size:40px 40px; background-color:var(--bg); }
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:10; height:46px; background:var(--bg2); border-bottom:1px solid var(--panelbrd); display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+    .topbar::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.4; }
+    .tb-left { display:flex; align-items:center; gap:12px; }
+    .logo-hex { font-size:22px; color:var(--accent); text-shadow:0 0 12px var(--accent); animation:hexPulse 3s infinite; }
+    @keyframes hexPulse { 0%,100%{text-shadow:0 0 8px var(--accent)} 50%{text-shadow:0 0 20px var(--accent),0 0 40px rgba(0,212,255,0.3)} }
+    .tb-title { font-family:var(--head); font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.1em; }
+    .tb-sub { font-family:var(--mono); font-size:9px; color:var(--muted); }
+    .tb-clock { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .page-wrap { position:relative; z-index:5; width:100%; padding:70px 24px 40px; display:flex; justify-content:center; }
+    .sq-panel { width:500px; background:var(--panel); border:1px solid var(--panelbrd); border-radius:2px; position:relative; overflow:hidden; animation:fadeIn 0.5s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .sq-panel::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--red),transparent); }
+    .sq-header { padding:20px 24px 16px; border-bottom:1px solid var(--panelbrd); background:rgba(0,0,0,0.2); }
+    .sq-num { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.2em; margin-bottom:4px; }
+    .sq-title { font-family:var(--head); font-size:14px; font-weight:700; color:var(--red); letter-spacing:0.12em; }
+    .sq-body { padding:24px; display:flex; flex-direction:column; gap:20px; }
+    .info-box { padding:12px 14px; background:rgba(255,60,60,0.05); border:1px solid rgba(255,60,60,0.2); border-radius:2px; font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.6; }
+    .info-box strong { color:var(--red); display:block; font-size:9px; letter-spacing:0.1em; margin-bottom:4px; }
+    .question-block { background:rgba(0,0,0,0.2); border:1px solid var(--panelbrd); border-radius:2px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .q-num { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.15em; margin-bottom:2px; }
+    .fg { display:flex; flex-direction:column; gap:6px; }
+    .fg label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.12em; }
+    .fg select, .fg input { background:var(--bg3); border:1px solid var(--panelbrd); border-radius:2px; color:var(--text); padding:9px 12px; font-family:var(--mono); font-size:11px; outline:none; transition:border-color 0.15s; width:100%; }
+    .fg select:focus, .fg input:focus { border-color:var(--red); }
+    .submit-btn { width:100%; padding:12px; background:transparent; border:1px solid var(--red); color:var(--red); font-family:var(--head); font-size:11px; font-weight:700; letter-spacing:0.2em; cursor:pointer; border-radius:2px; transition:all 0.2s; position:relative; overflow:hidden; }
+    .submit-btn::before { content:''; position:absolute; inset:0; background:var(--red); transform:translateX(-100%); transition:transform 0.3s; opacity:0.1; }
+    .submit-btn:hover::before { transform:translateX(0); }
+    .submit-btn:hover { box-shadow:0 0 20px rgba(255,60,60,0.2); }
+    .submit-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .alert-err { background:rgba(255,60,60,0.08); border:1px solid rgba(255,60,60,0.3); border-left:3px solid var(--red); color:#ff7a7a; border-radius:2px; padding:10px 12px; font-family:var(--mono); font-size:10px; display:none; }
+    .alert-ok { background:rgba(127,255,0,0.06); border:1px solid rgba(127,255,0,0.25); border-left:3px solid var(--accent2); color:var(--accent2); border-radius:2px; padding:10px 12px; font-family:var(--mono); font-size:10px; display:none; }
+  </style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="grid-bg"></div>
+
+<header class="topbar">
+  <div class="tb-left">
+    <div class="logo-hex">UG</div>
+    <div>
+      <div class="tb-title">UniGuard</div>
+      <div class="tb-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+    </div>
+    &nbsp;&nbsp;
+    <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">// SECURITY QUESTIONS SETUP</span>
+  </div>
+  <div class="tb-clock" id="clock">00:00:00</div>
+</header>
+
+<div class="page-wrap">
+  <div class="sq-panel">
+    <div class="sq-header">
+      <div class="sq-num">AUTH // L4 CRITICAL — MFA SETUP</div>
+      <div class="sq-title">SECURITY QUESTIONS</div>
+    </div>
+    <div class="sq-body">
+
+      <div class="info-box">
+        <strong>⚠ L4 CRITICAL SECURITY REQUIRED</strong>
+        Your account requires security questions as an additional authentication factor.
+        Choose 2 questions and provide answers. Answers are case-insensitive and stored securely.
+        Do NOT use obvious answers.
+      </div>
+
+      <!-- Question 1 -->
+      <div class="question-block">
+        <div class="q-num">SECURITY QUESTION 1 OF 2</div>
+        <div class="fg">
+          <label>SELECT QUESTION</label>
+          <select id="q1Select">
+            <option value="">Choose a question...</option>
+            <option value="pet">What was your first pet's name?</option>
+            <option value="city">In which city were you born?</option>
+            <option value="nickname">What was your childhood nickname?</option>
+            <option value="school">What was the name of your first school?</option>
+            <option value="mother">What is your mother's maiden name?</option>
+            <option value="car">What was the make of your first car?</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>YOUR ANSWER</label>
+          <input type="text" id="q1Answer" placeholder="Enter your answer (case-insensitive)"/>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="question-block">
+        <div class="q-num">SECURITY QUESTION 2 OF 2</div>
+        <div class="fg">
+          <label>SELECT QUESTION (different from question 1)</label>
+          <select id="q2Select">
+            <option value="">Choose a question...</option>
+            <option value="pet">What was your first pet's name?</option>
+            <option value="city">In which city were you born?</option>
+            <option value="nickname">What was your childhood nickname?</option>
+            <option value="school">What was the name of your first school?</option>
+            <option value="mother">What is your mother's maiden name?</option>
+            <option value="car">What was the make of your first car?</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>YOUR ANSWER</label>
+          <input type="text" id="q2Answer" placeholder="Enter your answer (case-insensitive)"/>
+        </div>
+      </div>
+
+      <div class="alert-err" id="sqErr"></div>
+      <div class="alert-ok"  id="sqOk"></div>
+
+      <button class="submit-btn" onclick="saveSecurityQuestions()">⊕ SAVE SECURITY QUESTIONS</button>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/supabase-config.js"></script>
+<script>
+  setInterval(()=>{ document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB'); },1000);
+
+  const identityId = sessionStorage.getItem('session_identity_id') || sessionStorage.getItem('auth_identity_id');
+  if (!identityId) window.location.replace('login.html');
+
+  // Question labels
+  const questionLabels = {
+    pet:      "What was your first pet's name?",
+    city:     "In which city were you born?",
+    nickname: "What was your childhood nickname?",
+    school:   "What was the name of your first school?",
+    mother:   "What is your mother's maiden name?",
+    car:      "What was the make of your first car?",
+  };
+
+  async function hashAnswer(answer) {
+    // Simple hash for answer (case-insensitive)
+    const normalized = answer.toLowerCase().trim();
+    const encoder    = new TextEncoder();
+    const data       = encoder.encode(normalized);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray  = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function saveSecurityQuestions() {
+    const q1 = document.getElementById('q1Select').value;
+    const a1 = document.getElementById('q1Answer').value.trim();
+    const q2 = document.getElementById('q2Select').value;
+    const a2 = document.getElementById('q2Answer').value.trim();
+
+    document.getElementById('sqErr').style.display = 'none';
+
+    if (!q1 || !a1) { showErr('⚠ PLEASE SELECT AND ANSWER QUESTION 1'); return; }
+    if (!q2 || !a2) { showErr('⚠ PLEASE SELECT AND ANSWER QUESTION 2'); return; }
+    if (q1 === q2)  { showErr('⚠ PLEASE SELECT TWO DIFFERENT QUESTIONS'); return; }
+    if (a1.length < 2) { showErr('⚠ ANSWER 1 MUST BE AT LEAST 2 CHARACTERS'); return; }
+    if (a2.length < 2) { showErr('⚠ ANSWER 2 MUST BE AT LEAST 2 CHARACTERS'); return; }
+
+    const btn = event.target; btn.disabled=true; btn.textContent='SAVING...';
+
+    try {
+      const hash1 = await hashAnswer(a1);
+      const hash2 = await hashAnswer(a2);
+
+      // Delete existing security questions
+      await window.supabase.from('auth_mfa')
+        .delete()
+        .eq('identity_id', identityId)
+        .eq('method', 'question');
+
+      // Save both questions
+      const { error } = await window.supabase.from('auth_mfa').insert([
+        { identity_id: identityId, method: 'question', question: questionLabels[q1], secret: hash1, is_active: true },
+        { identity_id: identityId, method: 'question', question: questionLabels[q2], secret: hash2, is_active: true },
+      ]);
+
+      if (error) { showErr('⚠ ERROR: ' + error.message); return; }
+
+      document.getElementById('sqOk').textContent = '✓ SECURITY QUESTIONS SAVED — REDIRECTING...';
+      document.getElementById('sqOk').style.display = 'block';
+
+      setTimeout(()=>{ window.location.replace('../my-profile.html'); }, 2000);
+
+    } catch(e) {
+      showErr('⚠ ERROR: ' + e.message);
+    } finally {
+      btn.disabled=false; btn.textContent='⊕ SAVE SECURITY QUESTIONS';
+    }
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('sqErr');
+    el.textContent = msg; el.style.display = 'block';
+  }
+</script>
+</body>
+</html>

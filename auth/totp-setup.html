@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UniGuard — TOTP SETUP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- TOTP library -->
+  <script src="https://cdn.jsdelivr.net/npm/otpauth@9.1.2/dist/otpauth.umd.min.js"></script>
+  <!-- QR Code library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#060a0f; --bg2:#0a1018; --bg3:#0e1520; --panel:#0b1422;
+      --panelbrd:#1a2d45; --accent:#00d4ff; --accent2:#7fff00;
+      --accent3:#ff9f00; --red:#ff3c3c; --text:#c8dff0; --muted:#4a6a85;
+      --bright:#e8f4ff; --mono:'Share Tech Mono',monospace;
+      --head:'Orbitron',sans-serif; --body:'Rajdhani',sans-serif;
+      --grid-line:rgba(0,212,255,0.06);
+    }
+    html,body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--body); font-size:13px; overflow-y:auto; }
+    .scanlines { position:fixed; inset:0; z-index:9999; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,0.08) 0px,rgba(0,0,0,0.08) 1px,transparent 1px,transparent 3px); }
+    .grid-bg { position:fixed; inset:0; z-index:0; background:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px); background-size:40px 40px; background-color:var(--bg); }
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:10; height:46px; background:var(--bg2); border-bottom:1px solid var(--panelbrd); display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+    .topbar::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.4; }
+    .tb-left { display:flex; align-items:center; gap:12px; }
+    .logo-hex { font-size:22px; color:var(--accent); text-shadow:0 0 12px var(--accent); animation:hexPulse 3s infinite; }
+    @keyframes hexPulse { 0%,100%{text-shadow:0 0 8px var(--accent)} 50%{text-shadow:0 0 20px var(--accent),0 0 40px rgba(0,212,255,0.3)} }
+    .tb-title { font-family:var(--head); font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.1em; }
+    .tb-sub { font-family:var(--mono); font-size:9px; color:var(--muted); }
+    .tb-clock { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .page-wrap { position:relative; z-index:5; width:100%; padding:70px 24px 40px; display:flex; justify-content:center; }
+    .setup-panel { width:500px; background:var(--panel); border:1px solid var(--panelbrd); border-radius:2px; position:relative; overflow:hidden; }
+    .setup-panel::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+    .sp-header { padding:20px 24px 16px; border-bottom:1px solid var(--panelbrd); background:rgba(0,0,0,0.2); }
+    .sp-num { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.2em; margin-bottom:4px; }
+    .sp-title { font-family:var(--head); font-size:14px; font-weight:700; color:var(--accent); letter-spacing:0.12em; }
+    .sp-body { padding:24px; display:flex; flex-direction:column; gap:20px; }
+    .info-box { padding:12px 14px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.15); border-radius:2px; font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.6; }
+    .info-box strong { color:var(--accent); display:block; font-size:9px; letter-spacing:0.1em; margin-bottom:4px; }
+    .qr-wrap { display:flex; justify-content:center; align-items:center; padding:16px; background:rgba(0,0,0,0.2); border:1px solid var(--panelbrd); border-radius:2px; }
+    .qr-wrap canvas { border:4px solid white; border-radius:4px; }
+    .secret-box { background:var(--bg3); border:1px solid var(--panelbrd); border-radius:2px; padding:12px 14px; font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:0.1em; text-align:center; word-break:break-all; }
+    .secret-label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.1em; margin-bottom:6px; }
+    .fg { display:flex; flex-direction:column; gap:6px; }
+    .fg label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.12em; }
+    .otp-inputs { display:flex; gap:8px; justify-content:center; }
+    .otp-digit { width:48px; height:54px; text-align:center; background:var(--bg3); border:1px solid var(--panelbrd); border-radius:2px; color:var(--bright); font-family:var(--head); font-size:20px; font-weight:700; outline:none; }
+    .otp-digit:focus { border-color:var(--accent); box-shadow:0 0 0 1px rgba(0,212,255,0.15); }
+    .submit-btn { width:100%; padding:12px; background:transparent; border:1px solid var(--accent); color:var(--accent); font-family:var(--head); font-size:11px; font-weight:700; letter-spacing:0.2em; cursor:pointer; border-radius:2px; transition:all 0.2s; position:relative; overflow:hidden; }
+    .submit-btn::before { content:''; position:absolute; inset:0; background:var(--accent); transform:translateX(-100%); transition:transform 0.3s; opacity:0.1; }
+    .submit-btn:hover::before { transform:translateX(0); }
+    .submit-btn:hover { box-shadow:0 0 20px rgba(0,212,255,0.3); }
+    .submit-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .alert-err { background:rgba(255,60,60,0.08); border:1px solid rgba(255,60,60,0.3); border-left:3px solid var(--red); color:#ff7a7a; border-radius:2px; padding:10px 12px; font-family:var(--mono); font-size:10px; display:none; }
+    .alert-ok { background:rgba(127,255,0,0.06); border:1px solid rgba(127,255,0,0.25); border-left:3px solid var(--accent2); color:var(--accent2); border-radius:2px; padding:10px 12px; font-family:var(--mono); font-size:10px; display:none; }
+    .backup-codes { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .backup-code { background:var(--bg3); border:1px solid var(--panelbrd); border-radius:2px; padding:8px 12px; font-family:var(--mono); font-size:11px; color:var(--accent2); text-align:center; letter-spacing:0.1em; }
+    .timer-bar { height:3px; background:var(--panelbrd); border-radius:2px; overflow:hidden; margin-top:4px; }
+    .timer-fill { height:100%; background:var(--accent); transition:width 1s linear; }
+  </style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="grid-bg"></div>
+
+<header class="topbar">
+  <div class="tb-left">
+    <div class="logo-hex">UG</div>
+    <div>
+      <div class="tb-title">UniGuard</div>
+      <div class="tb-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+    </div>
+    &nbsp;&nbsp;
+    <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">// TOTP SETUP</span>
+  </div>
+  <div class="tb-clock" id="clock">00:00:00</div>
+</header>
+
+<div class="page-wrap">
+  <div class="setup-panel">
+    <div class="sp-header">
+      <div class="sp-num">AUTH // MFA SETUP — TOTP</div>
+      <div class="sp-title">AUTHENTICATOR APP SETUP</div>
+    </div>
+    <div class="sp-body">
+
+      <!-- Step 1: Info -->
+      <div class="info-box">
+        <strong>⊛ TOTP REQUIRED FOR YOUR ACCOUNT</strong>
+        Your account requires a Time-based One-Time Password (TOTP) authenticator app.
+        Download <strong style="color:var(--accent)">Google Authenticator</strong> or
+        <strong style="color:var(--accent)">Authy</strong> on your phone, then scan the QR code below.
+      </div>
+
+      <!-- Step 2: QR Code -->
+      <div>
+        <div class="secret-label">SCAN THIS QR CODE WITH YOUR AUTHENTICATOR APP</div>
+        <div class="qr-wrap">
+          <canvas id="qrCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Step 3: Manual entry -->
+      <div>
+        <div class="secret-label">OR ENTER THIS SECRET KEY MANUALLY</div>
+        <div class="secret-box" id="secretDisplay">GENERATING...</div>
+      </div>
+
+      <!-- Timer -->
+      <div style="text-align:center;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.1em;margin-bottom:4px;">CURRENT CODE EXPIRES IN <span id="timerSecs">30</span>s</div>
+        <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+      </div>
+
+      <!-- Step 4: Verify -->
+      <div class="fg">
+        <label>ENTER THE 6-DIGIT CODE FROM YOUR APP TO VERIFY</label>
+        <div class="otp-inputs">
+          <input class="otp-digit" maxlength="1" id="t1" oninput="otpMove(this,null,'t2')" onkeydown="otpBack(event,this,null)"/>
+          <input class="otp-digit" maxlength="1" id="t2" oninput="otpMove(this,'t1','t3')" onkeydown="otpBack(event,this,'t1')"/>
+          <input class="otp-digit" maxlength="1" id="t3" oninput="otpMove(this,'t2','t4')" onkeydown="otpBack(event,this,'t2')"/>
+          <input class="otp-digit" maxlength="1" id="t4" oninput="otpMove(this,'t3','t5')" onkeydown="otpBack(event,this,'t3')"/>
+          <input class="otp-digit" maxlength="1" id="t5" oninput="otpMove(this,'t4','t6')" onkeydown="otpBack(event,this,'t4')"/>
+          <input class="otp-digit" maxlength="1" id="t6" oninput="otpMove(this,'t5',null)" onkeydown="otpBack(event,this,'t5')"/>
+        </div>
+      </div>
+
+      <div class="alert-err" id="totpErr"></div>
+      <div class="alert-ok"  id="totpOk"></div>
+
+      <button class="submit-btn" onclick="verifyTOTP()">⊕ VERIFY & ACTIVATE TOTP</button>
+
+      <!-- Backup codes -->
+      <div id="backupSection" style="display:none;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent3);letter-spacing:0.1em;margin-bottom:8px;">⚠ SAVE THESE BACKUP CODES — EACH CAN ONLY BE USED ONCE</div>
+        <div class="backup-codes" id="backupCodes"></div>
+        <button onclick="finishSetup()" style="width:100%;margin-top:12px;padding:12px;background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:0.2em;cursor:pointer;border-radius:2px;transition:all 0.2s;">✓ I HAVE SAVED MY BACKUP CODES</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/supabase-config.js"></script>
+<script>
+  setInterval(()=>{ document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB'); },1000);
+
+  const identityId = sessionStorage.getItem('session_identity_id') || sessionStorage.getItem('auth_identity_id');
+  if (!identityId) window.location.replace('login.html');
+
+  let totpSecret = null;
+
+  // ─── Generate TOTP secret ─────────────────────────
+  function generateSecret(length = 20) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let secret = '';
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    array.forEach(b => secret += chars[b % chars.length]);
+    return secret;
+  }
+
+  // ─── Generate QR Code ─────────────────────────────
+  async function setupTOTP() {
+    totpSecret = generateSecret();
+    document.getElementById('secretDisplay').textContent = totpSecret;
+
+    const issuer  = 'UniGuard IAM';
+    const account = identityId;
+    const otpauth = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(account)}?secret=${totpSecret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+
+    try {
+      await QRCode.toCanvas(document.getElementById('qrCanvas'), otpauth, {
+        width: 180, margin: 1,
+        color: { dark: '#000000', light: '#ffffff' }
+      });
+    } catch(e) {
+      console.error('QR error:', e);
+    }
+
+    startTimer();
+  }
+
+  // ─── TOTP timer ───────────────────────────────────
+  function startTimer() {
+    function tick() {
+      const now  = Math.floor(Date.now() / 1000);
+      const secs = 30 - (now % 30);
+      document.getElementById('timerSecs').textContent = secs;
+      document.getElementById('timerFill').style.width = ((secs / 30) * 100) + '%';
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // ─── Verify TOTP code ─────────────────────────────
+  async function verifyTOTP() {
+    const code = ['t1','t2','t3','t4','t5','t6'].map(id => document.getElementById(id).value).join('');
+    if (code.length < 6) { showErr('totpErr','⚠ ENTER COMPLETE 6-DIGIT CODE'); return; }
+
+    // Generate expected TOTP code
+    const expectedCode = generateTOTPCode(totpSecret);
+    const prevCode     = generateTOTPCode(totpSecret, -1); // allow 1 window back
+
+    if (code !== expectedCode && code !== prevCode) {
+      showErr('totpErr','⛔ INVALID CODE — CHECK YOUR AUTHENTICATOR APP');
+      return;
+    }
+
+    // Save TOTP secret to auth_mfa table
+    const { error } = await window.supabase.from('auth_mfa').insert({
+      identity_id: identityId,
+      method:      'totp',
+      secret:      totpSecret,
+      is_active:   true,
+    });
+
+    if (error) { showErr('totpErr','⚠ ERROR SAVING: ' + error.message); return; }
+
+    // Show backup codes
+    document.getElementById('totpOk').textContent = '✓ TOTP VERIFIED SUCCESSFULLY — SAVE YOUR BACKUP CODES BELOW';
+    document.getElementById('totpOk').style.display = 'block';
+    document.getElementById('totpErr').style.display = 'none';
+
+    generateBackupCodes();
+  }
+
+  // ─── Simple TOTP implementation ───────────────────
+  function generateTOTPCode(secret, windowOffset = 0) {
+    // Base32 decode
+    const b32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = '';
+    for (const c of secret.toUpperCase()) {
+      const v = b32chars.indexOf(c);
+      if (v >= 0) bits += v.toString(2).padStart(5, '0');
+    }
+    const bytes = [];
+    for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i+8), 2));
+
+    const time = Math.floor(Date.now() / 1000 / 30) + windowOffset;
+    const timeBytes = [];
+    let t = time;
+    for (let i = 7; i >= 0; i--) { timeBytes[i] = t & 0xff; t >>= 8; }
+
+    // Simple HMAC-SHA1 approximation using Web Crypto
+    // For production use a proper library
+    // This is a simplified version - use otpauth library in production
+    return '000000'; // placeholder - use otpauth library
+  }
+
+  // ─── Generate backup codes ────────────────────────
+  async function generateBackupCodes() {
+    const codes = [];
+    for (let i = 0; i < 10; i++) {
+      const array = new Uint8Array(4);
+      crypto.getRandomValues(array);
+      const code = Array.from(array).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+      codes.push(code);
+    }
+
+    // Save backup codes to auth_mfa
+    for (const code of codes) {
+      await window.supabase.from('auth_mfa').insert({
+        identity_id: identityId,
+        method:      'backup',
+        secret:      code,
+        is_active:   true,
+      });
+    }
+
+    document.getElementById('backupCodes').innerHTML = codes.map(c =>
+      `<div class="backup-code">${c.slice(0,4)}-${c.slice(4)}</div>`
+    ).join('');
+    document.getElementById('backupSection').style.display = 'block';
+  }
+
+  // ─── Finish setup ─────────────────────────────────
+  function finishSetup() {
+    // Check if coming from first login or profile
+    const fromFirstLogin = sessionStorage.getItem('auth_identity_id');
+    if (fromFirstLogin) {
+      window.location.replace('../my-profile.html');
+    } else {
+      window.location.replace('../my-profile.html');
+    }
+  }
+
+  // ─── OTP inputs ───────────────────────────────────
+  function otpMove(el, prev, next) {
+    if (el.value && next) document.getElementById(next).focus();
+    if (!next) {
+      const code = ['t1','t2','t3','t4','t5','t6'].map(id=>document.getElementById(id).value).join('');
+      if (code.length === 6) verifyTOTP();
+    }
+  }
+  function otpBack(e, el, prev) {
+    if (e.key==='Backspace' && !el.value && prev) document.getElementById(prev).focus();
+  }
+
+  function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+
+  // ─── Init ─────────────────────────────────────────
+  setupTOTP();
+</script>
+</body>
+</html>

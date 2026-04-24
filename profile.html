@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PROFILE — U N I V </title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/app-config.js"></script> 
+ <script src="js/branding.js"></script>
+<style>html { visibility: hidden; }</style>
+<script src="js/auth-guard.js"></script></head>
+<body>
+<div class="scanlines"></div>
+<div class="profile-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-hex">⬡</div>
+      <div>
+        <div class="logo-title">UniGuard</div>
+        <div class="logo-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">MAIN MODULES</div>
+      <a href="index.html" class="nav-item"><span class="ni">⊞</span>Dashboard<span class="na">›</span></a>
+      <a href="create.html" class="nav-item"><span class="ni">⊕</span>New Identity Registration<span class="na">›</span></a>
+      <a href="search.html" class="nav-item"><span class="ni">⊙</span>Multi-criteria Search<span class="na">›</span></a>
+      <div class="nav-group-label">SECURITY</div>
+      <a href="admin-auth.html" class="nav-item"><span class="ni">🔐</span>Auth Management<span class="na">›</span></a>
+      <div class="nav-group-label">REFERENCE</div>
+      <a href="#" class="nav-item"><span class="ni">◈</span>Use Cases<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">◉</span>Acceptance Criteria<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">⊛</span>Database Schema<span class="na">›</span></a>
+    </nav>
+    <div class="sys-status"><span class="blink-dot"></span>SYSTEM ONLINE</div>
+  </aside>
+  <main class="profile-main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="module-tag">MODULE:</span> IDENTITY PROFILE VIEW
+        &nbsp;|&nbsp;
+        <a href="search.html" style="color:var(--muted);font-size:10px;font-family:var(--mono);text-decoration:none">← BACK TO SEARCH</a>
+      </div>
+      <div class="topbar-clock" id="clock">00:00:00</div>
+    </header>
+    <div id="loadMsg" class="loading-msg" style="margin-top:40px">LOADING PROFILE...</div>
+    <div id="errMsg" class="empty-msg" style="display:none;color:var(--red)">PROFILE NOT FOUND.</div>
+    <div id="profileContent" style="display:none">
+      <div class="profile-card">
+        <div class="profile-avatar" id="pAvatar">??</div>
+        <div class="profile-info">
+          <div class="profile-name" id="pName">—</div>
+          <div class="profile-id-tag" id="pId">—</div>
+          <div class="profile-badges">
+            <span class="type-badge" id="pType">—</span>
+            <span class="sbadge" id="pStatus">—</span>
+          </div>
+        </div>
+        <div class="profile-right">
+          <button class="prof-action-btn pab-edit" id="editBtn" onclick="toggleEdit()">✏ EDIT INFO</button>
+          <select class="status-sel" id="statusSel" onchange="changeStatus()">
+            <option value="">CHANGE STATUS...</option>
+          </select>
+        </div>
+      </div>
+      <div class="profile-panels">
+        <div class="info-panel">
+          <div class="ip-header">PERSONAL INFORMATION</div>
+          <div class="ip-body" id="personalInfo"></div>
+        </div>
+        <div class="info-panel">
+          <div class="ip-header" id="specificTitle">ADDITIONAL INFORMATION</div>
+          <div class="ip-body" id="specificInfo"></div>
+        </div>
+        <div class="info-panel full">
+          <div class="ip-header">MODIFICATION HISTORY</div>
+          <div class="ip-body" id="historyContent"><div class="loading-msg">LOADING...</div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/supabase-config.js"></script>
+<script src="js/profile.js"></script>
+<script>
+  setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB')},1000);
+</script>
+</body>
+</html>

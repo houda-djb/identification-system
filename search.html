@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>U N I V </title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/app-config.js"></script> 
+ <script src="js/branding.js"></script>
+<style>html { visibility: hidden; }</style>
+<script src="js/auth-guard.js"></script></head>
+<body>
+<div class="scanlines"></div>
+<div class="search-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-hex">⬡</div>
+      <div>
+        <div class="logo-title">UniGuard</div>
+        <div class="logo-sub">IDENTITY & ACCESS MANAGEMENT — SYLVAH™</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">MAIN MODULES</div>
+      <a href="index.html" class="nav-item"><span class="ni">⊞</span>Dashboard<span class="na">›</span></a>
+      <a href="create.html" class="nav-item"><span class="ni">⊕</span>New Identity Registration<span class="na">›</span></a>
+      <a href="search.html" class="nav-item active"><span class="ni">⊙</span>Multi-criteria Search<span class="na">›</span></a>
+      <div class="nav-group-label">SECURITY</div>
+      <a href="admin-auth.html" class="nav-item"><span class="ni">🔐</span>Auth Management<span class="na">›</span></a>
+      <div class="nav-group-label">REFERENCE</div>
+      <a href="#" class="nav-item"><span class="ni">◈</span>Use Cases<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">◉</span>Acceptance Criteria<span class="na">›</span></a>
+      <a href="#" class="nav-item"><span class="ni">⊛</span>Database Schema<span class="na">›</span></a>
+    </nav>
+    <div class="sys-status"><span class="blink-dot"></span>SYSTEM ONLINE</div>
+  </aside>
+  <main class="search-main">
+    <header class="topbar">
+      <div class="topbar-left"><span class="module-tag">MODULE:</span> MULTI-CRITERIA SEARCH</div>
+      <div class="topbar-clock" id="clock">00:00:00</div>
+    </header>
+    <div class="search-inner">
+      <div class="search-controls">
+        <div class="sc-group">
+          <label>NAME / ID / EMAIL</label>
+          <input type="text" id="qText" placeholder="Search..." onkeydown="if(event.key==='Enter')runSearch()"/>
+        </div>
+        <div class="sc-group">
+          <label>IDENTITY TYPE</label>
+          <select id="qType">
+            <option value="">ALL TYPES</option>
+            <option value="STU">Student</option>
+            <option value="PHD">PhD Candidate</option>
+            <option value="FAC">Faculty</option>
+            <option value="STF">Staff</option>
+            <option value="TMP">Temporary</option>
+          </select>
+        </div>
+        <div class="sc-group">
+          <label>STATUS</label>
+          <select id="qStatus">
+            <option value="">ALL STATUSES</option>
+            <option>Pending</option>
+            <option>Active</option>
+            <option>Suspended</option>
+            <option>Inactive</option>
+            <option>Archived</option>
+          </select>
+        </div>
+        <div class="sc-group">
+          <label>ENTRY YEAR</label>
+          <input type="number" id="qYear" placeholder="2025" style="min-width:100px"/>
+        </div>
+        <button class="search-btn" onclick="runSearch()">⌕ SEARCH</button>
+        <button class="search-btn" onclick="clearSearch()" style="border-color:var(--muted);color:var(--muted)">✕ CLEAR</button>
+      </div>
+      <div class="results-panel">
+        <div class="results-header">
+          <span>SEARCH RESULTS</span>
+          <span class="results-count" id="resCount">—</span>
+        </div>
+        <div class="results-scroll">
+          <table class="rtable" id="resTable" style="display:none">
+            <thead>
+              <tr>
+                <th>IDENTIFIER</th><th>FULL NAME</th><th>TYPE</th>
+                <th>EMAIL</th><th>STATUS</th><th>CREATED</th><th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="resBody"></tbody>
+          </table>
+          <div id="resMsg" class="loading-msg">ENTER SEARCH CRITERIA OR PRESS SEARCH TO LOAD ALL</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="js/supabase-config.js"></script>
+<script src="js/search.js"></script>
+<script>
+  setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB')},1000);
+  window.addEventListener('DOMContentLoaded',()=>{
+    const q=new URLSearchParams(window.location.search).get('q');
+    if(q){document.getElementById('qText').value=q;runSearch();}
+    else runSearch();
+  });
+</script>
+</body>
+</html>

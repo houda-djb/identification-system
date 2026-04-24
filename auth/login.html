@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LOGIN — UNIV BATNA 2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#060a0f; --bg2:#0a1018; --bg3:#0e1520; --panel:#0b1422;
+      --panelbrd:#1a2d45; --accent:#00d4ff; --accent2:#7fff00;
+      --accent3:#ff9f00; --red:#ff3c3c; --text:#c8dff0; --muted:#4a6a85;
+      --bright:#e8f4ff; --mono:'Share Tech Mono',monospace;
+      --head:'Orbitron',sans-serif; --body:'Rajdhani',sans-serif;
+      --grid-line:rgba(0,212,255,0.06);
+    }
+    html,body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--body); font-size:13px; overflow:hidden; }
+    .scanlines { position:fixed; inset:0; z-index:9999; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(0,0,0,0.08) 0px,rgba(0,0,0,0.08) 1px,transparent 1px,transparent 3px); }
+    .grid-bg { position:fixed; inset:0; z-index:0; background:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px); background-size:40px 40px; background-color:var(--bg); }
+    .corner { position:fixed; width:60px; height:60px; z-index:2; pointer-events:none; }
+    .corner-tl { top:16px; left:16px; border-top:2px solid var(--accent); border-left:2px solid var(--accent); opacity:0.5; }
+    .corner-tr { top:16px; right:16px; border-top:2px solid var(--accent); border-right:2px solid var(--accent); opacity:0.5; }
+    .corner-bl { bottom:16px; left:16px; border-bottom:2px solid var(--accent); border-left:2px solid var(--accent); opacity:0.5; }
+    .corner-br { bottom:16px; right:16px; border-bottom:2px solid var(--accent); border-right:2px solid var(--accent); opacity:0.5; }
+    .topbar { position:fixed; top:0; left:0; right:0; z-index:10; height:46px; background:var(--bg2); border-bottom:1px solid var(--panelbrd); display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+    .topbar::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); opacity:0.4; }
+    .tb-left { display:flex; align-items:center; gap:12px; }
+    .logo-hex { font-size:22px; color:var(--accent); text-shadow:0 0 12px var(--accent); animation:hexPulse 3s infinite; }
+    @keyframes hexPulse { 0%,100%{text-shadow:0 0 8px var(--accent)} 50%{text-shadow:0 0 20px var(--accent),0 0 40px rgba(0,212,255,0.3)} }
+    .tb-title { font-family:var(--head); font-size:11px; font-weight:700; color:var(--accent); letter-spacing:0.1em; }
+    .tb-sub { font-family:var(--mono); font-size:9px; color:var(--muted); }
+    .tb-clock { font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:0.08em; }
+    .module-tag { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.15em; }
+    .login-wrap { position:relative; z-index:5; width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; padding-top:46px; }
+    .login-left { width:340px; padding:40px 32px; display:flex; flex-direction:column; gap:28px; animation:fadeInLeft 0.6s ease both; }
+    @keyframes fadeInLeft { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+    .sys-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.2); border-radius:2px; padding:6px 12px; font-family:var(--mono); font-size:9px; color:var(--accent); letter-spacing:0.15em; width:fit-content; }
+    .blink-dot { width:6px; height:6px; background:var(--accent2); border-radius:50%; box-shadow:0 0 8px var(--accent2); animation:blink 1.4s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .sys-title { font-family:var(--head); font-size:26px; font-weight:900; color:var(--bright); letter-spacing:0.06em; line-height:1.3; }
+    .sys-title span { color:var(--accent); display:block; }
+    .sys-desc { font-family:var(--body); font-size:13px; color:var(--muted); line-height:1.7; }
+    .auth-levels { display:flex; flex-direction:column; gap:8px; }
+    .al-title { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.15em; margin-bottom:4px; }
+    .al-row { display:flex; align-items:center; gap:10px; padding:7px 10px; background:rgba(0,0,0,0.2); border:1px solid var(--panelbrd); border-radius:2px; font-family:var(--mono); font-size:10px; }
+    .al-badge { min-width:24px; height:18px; display:flex; align-items:center; justify-content:center; font-family:var(--head); font-size:8px; font-weight:700; border-radius:2px; letter-spacing:0.05em; }
+    .al-l1 { background:rgba(0,212,255,0.15); color:var(--accent); border:1px solid rgba(0,212,255,0.3); }
+    .al-l2 { background:rgba(127,255,0,0.12); color:var(--accent2); border:1px solid rgba(127,255,0,0.3); }
+    .al-l3 { background:rgba(255,159,0,0.12); color:var(--accent3); border:1px solid rgba(255,159,0,0.3); }
+    .al-l4 { background:rgba(255,60,60,0.12); color:var(--red); border:1px solid rgba(255,60,60,0.3); }
+    .al-name { color:var(--text); flex:1; font-size:10px; }
+    .al-method { color:var(--muted); font-size:9px; }
+    .v-divider { width:1px; height:400px; align-self:center; background:linear-gradient(to bottom,transparent,var(--panelbrd) 30%,var(--panelbrd) 70%,transparent); position:relative; flex-shrink:0; }
+    .v-divider::after { content:'//'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--bg); padding:6px 4px; font-family:var(--mono); font-size:9px; color:var(--muted); }
+    .login-panel { width:380px; background:var(--panel); border:1px solid var(--panelbrd); border-radius:2px; position:relative; overflow:hidden; animation:fadeInRight 0.6s ease 0.15s both; }
+    @keyframes fadeInRight { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    .login-panel::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+    .lp-header { padding:20px 24px 16px; border-bottom:1px solid var(--panelbrd); background:rgba(0,0,0,0.2); }
+    .lp-num { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.2em; margin-bottom:4px; }
+    .lp-title { font-family:var(--head); font-size:14px; font-weight:700; color:var(--accent); letter-spacing:0.12em; }
+    .lp-body { padding:24px; display:flex; flex-direction:column; gap:16px; }
+    .steps { display:flex; gap:6px; align-items:center; font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.1em; margin-bottom:4px; }
+    .step { display:flex; align-items:center; gap:6px; }
+    .step-dot { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:700; font-family:var(--head); border:1px solid var(--panelbrd); color:var(--muted); transition:all 0.3s; }
+    .step-dot.active { border-color:var(--accent); color:var(--accent); box-shadow:0 0 8px rgba(0,212,255,0.3); }
+    .step-dot.done { background:rgba(127,255,0,0.15); border-color:var(--accent2); color:var(--accent2); }
+    .step-line { width:24px; height:1px; background:var(--panelbrd); }
+    .step-line.done { background:var(--accent2); }
+    .fg { display:flex; flex-direction:column; gap:6px; }
+    .fg label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; }
+    .fg input { background:var(--bg3); border:1px solid var(--panelbrd); border-radius:2px; color:var(--text); padding:10px 40px 10px 12px; font-family:var(--mono); font-size:12px; outline:none; transition:border-color 0.15s,box-shadow 0.15s; width:100%; }
+    .fg input:focus { border-color:var(--accent); box-shadow:0 0 0 1px rgba(0,212,255,0.12); }
+    .fg input::placeholder { color:var(--muted); }
+    .input-wrap { position:relative; }
+    .eye-btn { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px; transition:color 0.15s; }
+    .eye-btn:hover { color:var(--accent); }
+    .auth-level-indicator { display:flex; align-items:center; gap:8px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid var(--panelbrd); border-radius:2px; font-family:var(--mono); font-size:10px; color:var(--muted); }
+    .ali-val { color:var(--accent); font-weight:700; margin-left:auto; }
+    .attempt-bar { display:flex; gap:4px; align-items:center; font-family:var(--mono); font-size:9px; color:var(--muted); }
+    .attempt-dots { display:flex; gap:4px; margin-left:auto; }
+    .attempt-dot { width:8px; height:8px; border-radius:50%; border:1px solid var(--muted); background:transparent; transition:all 0.2s; }
+    .attempt-dot.used { background:var(--red); border-color:var(--red); box-shadow:0 0 6px rgba(255,60,60,0.4); }
+    .submit-btn { width:100%; padding:12px; background:transparent; border:1px solid var(--accent); color:var(--accent); font-family:var(--head); font-size:11px; font-weight:700; letter-spacing:0.2em; cursor:pointer; border-radius:2px; transition:all 0.2s; position:relative; overflow:hidden; margin-top:4px; }
+    .submit-btn::before { content:''; position:absolute; inset:0; background:var(--accent); transform:translateX(-100%); transition:transform 0.3s; opacity:0.1; }
+    .submit-btn:hover::before { transform:translateX(0); }
+    .submit-btn:hover { box-shadow:0 0 20px rgba(0,212,255,0.3); }
+    .submit-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .alert-err { background:rgba(255,60,60,0.08); border:1px solid rgba(255,60,60,0.3); border-left:3px solid var(--red); color:#ff7a7a; border-radius:2px; padding:10px 12px; font-family:var(--mono); font-size:10px; line-height:1.5; display:none; }
+    .fp-link { font-family:var(--mono); font-size:9px; color:var(--muted); text-align:right; letter-spacing:0.08em; cursor:pointer; transition:color 0.15s; text-decoration:none; display:block; }
+    .fp-link:hover { color:var(--accent); }
+    .mfa-section { display:none; flex-direction:column; gap:14px; }
+    .mfa-info { padding:10px 12px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.15); border-radius:2px; font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.6; }
+    .mfa-info strong { color:var(--accent); display:block; margin-bottom:4px; font-size:9px; letter-spacing:0.1em; }
+    .otp-inputs { display:flex; gap:8px; justify-content:center; }
+    .otp-digit { width:42px; height:48px; text-align:center; background:var(--bg3); border:1px solid var(--panelbrd); border-radius:2px; color:var(--bright); font-family:var(--head); font-size:18px; font-weight:700; outline:none; transition:border-color 0.15s; }
+    .otp-digit:focus { border-color:var(--accent); box-shadow:0 0 0 1px rgba(0,212,255,0.15); }
+    .lockout-overlay { display:none; position:absolute; inset:0; background:rgba(6,10,15,0.95); align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:20; }
+    .lockout-overlay.show { display:flex; animation:fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .lock-icon { font-size:40px; animation:lockPulse 2s infinite; }
+    @keyframes lockPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    .lock-title { font-family:var(--head); font-size:13px; color:var(--red); letter-spacing:0.15em; }
+    .lock-timer { font-family:var(--mono); font-size:22px; color:var(--bright); letter-spacing:0.1em; }
+    .lock-sub { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.1em; }
+    .status-bar { position:fixed; bottom:0; left:0; right:0; z-index:10; height:28px; background:var(--bg2); border-top:1px solid var(--panelbrd); display:flex; align-items:center; padding:0 24px; gap:24px; }
+    .sb-item { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:0.08em; display:flex; align-items:center; gap:6px; }
+    .sb-dot { width:5px; height:5px; border-radius:50%; }
+    .sb-green { background:var(--accent2); box-shadow:0 0 6px var(--accent2); }
+    .sb-blue  { background:var(--accent);  box-shadow:0 0 6px var(--accent); }
+  </style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="grid-bg"></div>
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<header class="topbar">
+  <div class="tb-left">
+    <div class="logo-hex">⬡</div>
+    <div>
+      <div class="tb-title">UNIV BATNA 2</div>
+      <div class="tb-sub">IDENTITY & ACCESS MANAGEMENT</div>
+    </div>
+    &nbsp;&nbsp;
+    <span class="module-tag">// AUTHENTICATION GATEWAY</span>
+  </div>
+  <div class="tb-clock" id="clock">00:00:00</div>
+</header>
+
+<div class="login-wrap">
+  <div class="login-left">
+    <div class="sys-badge"><span class="blink-dot"></span>SYSTEM ONLINE — AUTH MODULE v2.0</div>
+    <div>
+      <div class="sys-title">SECURE<span>ACCESS PORTAL</span></div>
+      <div class="sys-desc">University identity verification system. Access is restricted to registered members of Université Batna 2.</div>
+    </div>
+    <div class="auth-levels">
+      <div class="al-title">AUTHENTICATION LEVELS</div>
+      <div class="al-row"><span class="al-badge al-l1">L1</span><span class="al-name">Basic</span><span class="al-method">Password only</span></div>
+      <div class="al-row"><span class="al-badge al-l2">L2</span><span class="al-name">Standard</span><span class="al-method">Password + SMS OTP</span></div>
+      <div class="al-row"><span class="al-badge al-l3">L3</span><span class="al-name">High</span><span class="al-method">Password + OTP + TOTP</span></div>
+      <div class="al-row"><span class="al-badge al-l4">L4</span><span class="al-name">Critical</span><span class="al-method">Password + OTP + TOTP + Q&A</span></div>
+    </div>
+  </div>
+
+  <div class="v-divider"></div>
+
+  <div class="login-panel" id="loginPanel">
+    <div class="lockout-overlay" id="lockoutOverlay">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-title">ACCOUNT LOCKED</div>
+      <div class="lock-timer" id="lockTimer">30:00</div>
+      <div class="lock-sub">TOO MANY FAILED ATTEMPTS — RETRY AFTER TIMER</div>
+    </div>
+    <div class="lp-header">
+      <div class="lp-num">AUTH // STEP <span id="stepLabel">01</span> OF <span id="stepTotal">01</span></div>
+      <div class="lp-title" id="panelTitle">IDENTITY VERIFICATION</div>
+    </div>
+    <div class="lp-body">
+      <div class="steps" id="stepsRow">
+        <div class="step"><div class="step-dot active" id="dot1">1</div><span>CREDENTIALS</span></div>
+        <div class="step-line" id="line1"></div>
+        <div class="step"><div class="step-dot" id="dot2">2</div><span>MFA</span></div>
+        <div class="step-line" id="line2"></div>
+        <div class="step"><div class="step-dot" id="dot3">3</div><span>ACCESS</span></div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div id="step1">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="fg">
+            <label>USERNAME / IDENTITY ID</label>
+            <div class="input-wrap">
+              <input type="text" id="username" placeholder="STU202400001 or username" autocomplete="username"/>
+            </div>
+          </div>
+          <div class="fg">
+            <label>PASSWORD</label>
+            <div class="input-wrap">
+              <input type="password" id="password" placeholder="••••••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+              <button class="eye-btn" onclick="togglePwd()" tabindex="-1">👁</button>
+            </div>
+          </div>
+          <div class="auth-level-indicator">
+            <span>DETECTED AUTH LEVEL</span>
+            <span class="ali-val" id="detectedLevel">— ENTER ID</span>
+          </div>
+          <div class="attempt-bar">
+            <span>FAILED ATTEMPTS</span>
+            <div class="attempt-dots">
+              <div class="attempt-dot" id="ad1"></div>
+              <div class="attempt-dot" id="ad2"></div>
+              <div class="attempt-dot" id="ad3"></div>
+              <div class="attempt-dot" id="ad4"></div>
+              <div class="attempt-dot" id="ad5"></div>
+            </div>
+          </div>
+          <div class="alert-err" id="errBox"></div>
+          <button class="submit-btn" id="loginBtn" onclick="doLogin()">⊕ AUTHENTICATE</button>
+          <a class="fp-link" onclick="goForgot()">FORGOT PASSWORD? →</a>
+        </div>
+      </div>
+
+      <!-- STEP 2: MFA -->
+      <div class="mfa-section" id="step2">
+        <div class="mfa-info">
+          <strong>⊛ MFA VERIFICATION REQUIRED</strong>
+          <span id="mfaDesc">Enter the verification code sent to your registered contact.</span>
+        </div>
+        <div class="fg">
+          <label>VERIFICATION CODE</label>
+          <div class="otp-inputs">
+            <input class="otp-digit" maxlength="1" id="o1" oninput="otpMove(this,null,'o2')" onkeydown="otpBack(event,this,null,'o1')"/>
+            <input class="otp-digit" maxlength="1" id="o2" oninput="otpMove(this,'o1','o3')" onkeydown="otpBack(event,this,'o1','o2')"/>
+            <input class="otp-digit" maxlength="1" id="o3" oninput="otpMove(this,'o2','o4')" onkeydown="otpBack(event,this,'o2','o3')"/>
+            <input class="otp-digit" maxlength="1" id="o4" oninput="otpMove(this,'o3','o5')" onkeydown="otpBack(event,this,'o3','o4')"/>
+            <input class="otp-digit" maxlength="1" id="o5" oninput="otpMove(this,'o4','o6')" onkeydown="otpBack(event,this,'o4','o5')"/>
+            <input class="otp-digit" maxlength="1" id="o6" oninput="otpMove(this,'o5',null)" onkeydown="otpBack(event,this,'o5','o6')"/>
+          </div>
+        </div>
+        <div class="alert-err" id="mfaErrBox"></div>
+        <div class="alert-ok" id="mfaOkBox" style="display:none;background:rgba(127,255,0,0.06);border:1px solid rgba(127,255,0,0.25);border-left:3px solid var(--accent2);color:var(--accent2);border-radius:2px;padding:10px 12px;font-family:var(--mono);font-size:10px;"></div>
+        <button class="submit-btn" id="mfaBtn" onclick="doMFA()">⊕ VERIFY CODE</button>
+        <div style="display:flex;justify-content:space-between;">
+          <a class="fp-link" onclick="backToStep1()" style="text-align:left">← BACK TO LOGIN</a>
+          <a class="fp-link" onclick="resendOTP()" style="color:var(--muted)">↻ RESEND CODE</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="sb-item"><span class="sb-dot sb-green"></span>DATABASE CONNECTED</div>
+  <div class="sb-item"><span class="sb-dot sb-blue"></span>HTTPS SECURE</div>
+  <div class="sb-item">SESSION: <span id="sessionStatus" style="color:var(--red);margin-left:4px">NONE</span></div>
+  <div class="sb-item" style="margin-left:auto">UNIV BATNA 2 — IAM SYSTEM</div>
+</div>
+
+<script src="../js/supabase-config.js"></script>
+<script src="../js/auth-password.js"></script>
+<script>
+  setInterval(()=>{
+    document.getElementById('clock').textContent =
+      new Date().toTimeString().slice(0,8)+' // '+new Date().toLocaleDateString('en-GB');
+  },1000);
+
+  let currentIdentityId = null;
+  let currentAuthLevel  = 1;
+  let failedAttempts    = 0;
+  let lockTimerInterval = null;
+
+  const AUTH_LEVELS  = { STU:1, PHD:2, FAC:2, STF:2, TMP:1 };
+  const LEVEL_LABELS = { 1:'L1 — BASIC', 2:'L2 — STANDARD', 3:'L3 — HIGH', 4:'L4 — CRITICAL' };
+
+  document.getElementById('username').addEventListener('input', function() {
+    const prefix = this.value.trim().toUpperCase().slice(0,3);
+    const lvl = AUTH_LEVELS[prefix];
+    const el  = document.getElementById('detectedLevel');
+    if (lvl) {
+      el.textContent = LEVEL_LABELS[lvl];
+      el.style.color = lvl===1?'var(--accent)':lvl===2?'var(--accent2)':lvl===3?'var(--accent3)':'var(--red)';
+    } else {
+      el.textContent = '— ENTER ID';
+      el.style.color = 'var(--muted)';
+    }
+  });
+
+  function togglePwd() {
+    const inp = document.getElementById('password');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  function updateAttemptDots(n) {
+    for (let i=1;i<=5;i++) document.getElementById('ad'+i).classList.toggle('used', i<=n);
+  }
+
+  function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+  function hideErr(id)      { document.getElementById(id).style.display='none'; }
+
+  function startLockout(minutes) {
+    const end = Date.now() + minutes*60*1000;
+    document.getElementById('lockoutOverlay').classList.add('show');
+    lockTimerInterval = setInterval(()=>{
+      const rem = Math.max(0, end - Date.now());
+      const m = String(Math.floor(rem/60000)).padStart(2,'0');
+      const s = String(Math.floor((rem%60000)/1000)).padStart(2,'0');
+      document.getElementById('lockTimer').textContent = m+':'+s;
+      if (rem<=0) {
+        clearInterval(lockTimerInterval);
+        document.getElementById('lockoutOverlay').classList.remove('show');
+        failedAttempts=0; updateAttemptDots(0);
+      }
+    },1000);
+  }
+
+  async function doLogin() {
+    hideErr('errBox');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    if (!username || !password) { showErr('errBox','⚠ ENTER BOTH USERNAME AND PASSWORD'); return; }
+
+    const btn = document.getElementById('loginBtn');
+    btn.disabled=true; btn.textContent='VERIFYING...';
+
+    try {
+      const { data:cred, error } = await window.supabase
+        .from('auth_credentials')
+        .select('*')
+        .or(`username.eq.${username},identity_id.eq.${username.toUpperCase()}`)
+        .single();
+
+      if (error || !cred) { showErr('errBox','⛔ IDENTITY NOT FOUND'); return; }
+
+      if (cred.is_locked && cred.locked_until && new Date(cred.locked_until) > new Date()) {
+        startLockout(30); return;
+      }
+
+      const passwordOk = await verifyPassword(password, cred.password_hash);
+
+      if (!passwordOk) {
+        const newFails = (cred.failed_attempts||0)+1;
+        failedAttempts = newFails;
+        updateAttemptDots(newFails);
+        const updates = { failed_attempts: newFails };
+        if (newFails>=5) {
+          updates.is_locked=true;
+          updates.locked_until=new Date(Date.now()+30*60*1000).toISOString();
+          startLockout(30);
+        }
+        await window.supabase.from('auth_credentials').update(updates).eq('id',cred.id);
+        showErr('errBox','⛔ INVALID PASSWORD');
+        return;
+      }
+
+      await window.supabase.from('auth_credentials').update({
+        failed_attempts:0, is_locked:false, locked_until:null
+      }).eq('id',cred.id);
+
+      currentIdentityId = cred.identity_id;
+      currentAuthLevel  = cred.auth_level || 1;
+
+      await logAttempt(currentIdentityId, true, false);
+
+      if (cred.is_first_login) {
+        sessionStorage.setItem('auth_identity_id', currentIdentityId);
+        sessionStorage.setItem('auth_force_change','1');
+        window.location.href = 'change-password.html';
+        return;
+      }
+
+      if (currentAuthLevel >= 2) {
+        goToStep2();
+      } else {
+        await createSession(currentIdentityId, currentAuthLevel);
+        grantAccess();
+      }
+
+    } catch(e) {
+      showErr('errBox','⚠ SYSTEM ERROR — '+e.message);
+    } finally {
+      btn.disabled=false; btn.textContent='⊕ AUTHENTICATE';
+    }
+  }
+
+  async function goToStep2() {
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'flex';
+    document.getElementById('stepLabel').textContent = '02';
+    document.getElementById('stepTotal').textContent = '02';
+    document.getElementById('panelTitle').textContent = 'MFA VERIFICATION';
+    document.getElementById('dot1').classList.replace('active','done');
+    document.getElementById('line1').classList.add('done');
+    document.getElementById('dot2').classList.add('active');
+    document.getElementById('o1').focus();
+
+    try {
+      let userEmail = null;
+      let userName  = currentIdentityId;
+
+      const { data: cred } = await window.supabase
+        .from('auth_credentials').select('email')
+        .eq('identity_id', currentIdentityId).single();
+
+      if (cred?.email) {
+        userEmail = cred.email;
+      } else {
+        const { data: person } = await window.supabase
+          .from('persons').select('personal_email, first_name, last_name')
+          .eq('id', currentIdentityId).single();
+        if (person?.personal_email) {
+          userEmail = person.personal_email;
+          userName  = person.first_name + ' ' + person.last_name;
+        }
+      }
+
+      if (!userEmail) {
+        showErr('mfaErrBox','⚠ NO EMAIL FOUND FOR THIS ACCOUNT — CONTACT ADMIN');
+        return;
+      }
+
+      const res = await fetch(window.SUPABASE_URL + '/functions/v1/quick-processor', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ identity_id: currentIdentityId, email: userEmail, name: userName }),
+      });
+
+      const data = await res.json();
+      if (data.error) { showErr('mfaErrBox','⚠ ' + data.error); return; }
+
+      document.getElementById('mfaDesc').textContent =
+        'A 6-digit code was sent to ' + userEmail.replace(/(.{2}).*(@.*)/, '$1***$2');
+
+    } catch(e) {
+      showErr('mfaErrBox','⚠ FAILED TO SEND OTP — ' + e.message);
+    }
+  }
+
+  function backToStep1() {
+    document.getElementById('step2').style.display='none';
+    document.getElementById('step1').style.display='block';
+    document.getElementById('stepLabel').textContent='01';
+    document.getElementById('stepTotal').textContent='01';
+    document.getElementById('panelTitle').textContent='IDENTITY VERIFICATION';
+    document.getElementById('dot1').classList.replace('done','active');
+    document.getElementById('line1').classList.remove('done');
+    document.getElementById('dot2').classList.remove('active');
+  }
+
+  async function doMFA() {
+    const code = ['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+    if (code.length<6) { showErr('mfaErrBox','⚠ ENTER COMPLETE 6-DIGIT CODE'); return; }
+    const btn = document.getElementById('mfaBtn');
+    btn.disabled=true; btn.textContent='VERIFYING...';
+    try {
+      const { data:otp, error } = await window.supabase
+        .from('auth_otp').select('*')
+        .eq('identity_id',currentIdentityId).eq('code',code)
+        .eq('used',false).gte('expires_at',new Date().toISOString()).single();
+      if (error||!otp) { showErr('mfaErrBox','⛔ INVALID OR EXPIRED CODE'); return; }
+      await window.supabase.from('auth_otp').update({used:true}).eq('id',otp.id);
+      await createSession(currentIdentityId, currentAuthLevel);
+      await logAttempt(currentIdentityId, true, true);
+      document.getElementById('dot2').classList.replace('active','done');
+      document.getElementById('line2').classList.add('done');
+      document.getElementById('dot3').classList.add('active');
+      grantAccess();
+    } catch(e) {
+      showErr('mfaErrBox','⚠ SYSTEM ERROR — '+e.message);
+    } finally {
+      btn.disabled=false; btn.textContent='⊕ VERIFY CODE';
+    }
+  }
+
+  function otpMove(el,prev,next) {
+    if (el.value&&next) document.getElementById(next).focus();
+    if (!next) {
+      const code=['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+      if (code.length===6) doMFA();
+    }
+  }
+  function otpBack(e,el,prev) {
+    if (e.key==='Backspace'&&!el.value&&prev) document.getElementById(prev).focus();
+  }
+
+  async function createSession(identityId, level) {
+    const token   = crypto.randomUUID();
+    const expires = new Date(Date.now()+8*60*60*1000).toISOString();
+    await window.supabase.from('auth_sessions').insert({
+      identity_id:identityId, session_token:token, auth_level:level, expires_at:expires
+    });
+    sessionStorage.setItem('session_token', token);
+    sessionStorage.setItem('session_identity_id', identityId);
+    sessionStorage.setItem('session_auth_level', level);
+    document.getElementById('sessionStatus').textContent='ACTIVE';
+    document.getElementById('sessionStatus').style.color='var(--accent2)';
+  }
+
+  async function logAttempt(identityId, success, mfaUsed) {
+    await window.supabase.from('auth_login_history').insert({
+      identity_id:identityId, success, mfa_used:mfaUsed
+    });
+  }
+
+  function grantAccess() {
+    const level = parseInt(sessionStorage.getItem('session_auth_level') || '1');
+    if (level >= 3) {
+      window.location.href = '../index.html';
+    } else {
+      window.location.href = '../my-profile.html';
+    }
+  }
+
+  async function resendOTP() {
+    const okBox  = document.getElementById('mfaOkBox');
+    const errBox = document.getElementById('mfaErrBox');
+    errBox.style.display = 'none';
+    okBox.style.display  = 'none';
+    ['o1','o2','o3','o4','o5','o6'].forEach(id => document.getElementById(id).value = '');
+    try {
+      let userEmail = null;
+      let userName  = currentIdentityId;
+      const { data: cred } = await window.supabase
+        .from('auth_credentials').select('email')
+        .eq('identity_id', currentIdentityId).single();
+      if (cred?.email) {
+        userEmail = cred.email;
+      } else {
+        const { data: person } = await window.supabase
+          .from('persons').select('personal_email, first_name, last_name')
+          .eq('id', currentIdentityId).single();
+        if (person?.personal_email) {
+          userEmail = person.personal_email;
+          userName  = person.first_name + ' ' + person.last_name;
+        }
+      }
+      if (!userEmail) { showErr('mfaErrBox','⚠ NO EMAIL FOUND'); return; }
+      const res = await fetch(window.SUPABASE_URL + '/functions/v1/quick-processor', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+window.SUPABASE_ANON_KEY },
+        body: JSON.stringify({ identity_id: currentIdentityId, email: userEmail, name: userName }),
+      });
+      const data = await res.json();
+      if (data.error) { showErr('mfaErrBox','⚠ '+data.error); return; }
+      okBox.textContent = '✔ NEW CODE SENT TO ' + userEmail.replace(/(.{2}).*(@.*)/, '$1***$2');
+      okBox.style.display = 'block';
+      document.getElementById('o1').focus();
+    } catch(e) {
+      showErr('mfaErrBox','⚠ RESEND FAILED — '+e.message);
+    }
+  }
+
+  function goForgot() { window.location.href='reset-password.html'; }
+</script>
+</body>
+</html>
