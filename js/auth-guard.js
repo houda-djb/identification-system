@@ -1,7 +1,3 @@
-// =====================================================
-// auth-guard.js — UNIV BATNA 2
-// Protects pages and checks auth level access
-// =====================================================
 
 (async function () {
 

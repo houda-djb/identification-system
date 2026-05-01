@@ -1,8 +1,3 @@
-// =====================================================
-// branding.js — UniGuard IAM System
-// © 2026 SYLVAH™. All Rights Reserved.
-// Applies APP_CONFIG branding to current page
-// =====================================================
 
 document.addEventListener('DOMContentLoaded', function() {
   if (!window.APP_CONFIG) return;

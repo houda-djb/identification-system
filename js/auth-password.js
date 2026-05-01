@@ -1,8 +1,4 @@
-// =====================================================
-// auth-password.js — UNIV BATNA 2
-// Calls the auth-password Edge Function for all
-// password operations: hash, verify, validate
-// =====================================================
+
 
 const EDGE_URL = window.SUPABASE_URL + '/functions/v1/auth-password';
 

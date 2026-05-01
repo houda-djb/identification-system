@@ -1,8 +1,3 @@
-// =====================================================
-// app-config.js — UniGuard IAM System
-// © 2026 SYLVAH™. All Rights Reserved.
-// Product: UniGuard | Author: SYLVAH™
-// =====================================================
 
 const APP_CONFIG = {
 
@@ -33,7 +28,6 @@ const APP_CONFIG = {
   },
 };
 
-// ── SYLVAH™ Signature ─────────────────────────────
 const SYLVAH_SIGNATURE = {
   product:    'UNIGUARD-IAM',
   author:     'SYLVAH™',

@@ -1,8 +1,3 @@
-// =====================================================
-// create.js — UniGuard IAM System
-// © 2026 SYLVAH™. All Rights Reserved.
-// Handles new identity registration + auth setup
-// =====================================================
 
 function onTypeChange(type) {
   ['STU','PHD','FAC','STF','TMP'].forEach(t => {
